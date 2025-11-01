@@ -271,9 +271,10 @@ export default function PurchasesSection() {
         <CardHeader>
           <CardTitle className="text-xs sm:text-sm lg:text-base">Vendor-wise Purchase Summary</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <table className="w-full min-w-[640px]">
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          {/* Desktop Table */}
+          <div className="hidden lg:block">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Vendor Name</th>
@@ -306,6 +307,43 @@ export default function PurchasesSection() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile/Tablet Cards */}
+          <div className="lg:hidden divide-y divide-gray-100">
+            {vendorData.map((vendor, index) => (
+              <div key={index} className="py-3 space-y-2.5">
+                <div className="flex justify-between items-start gap-2 pb-2 border-b border-gray-100">
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm font-bold text-gray-900">{vendor.vendor}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-500 text-xs">★</span>
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-700">{vendor.rating}</span>
+                      </div>
+                      <Badge variant={vendor.rating >= 4.5 ? 'success' : vendor.rating >= 4.0 ? 'secondary' : 'warning'} className="text-[9px]">
+                        {vendor.rating >= 4.5 ? 'Excellent' : vendor.rating >= 4.0 ? 'Good' : 'Average'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Purchase</span>
+                    <span className="text-[11px] font-semibold text-gray-900">₹{vendor.purchase}L</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Orders</span>
+                    <span className="text-[11px] text-gray-900">{vendor.orders}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Avg Value</span>
+                    <span className="text-[11px] text-gray-900">₹{(vendor.purchase / vendor.orders).toFixed(2)}L</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

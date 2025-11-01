@@ -21,13 +21,16 @@ import BusinessHealthSection from '@/components/sections/BusinessHealthSection'
 import PurchasesSection from '@/components/sections/PurchasesSection'
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<string | null>(null) 
+  const [pendingCount, setPendingCount] = useState(0)
+
+
 
   const metrics = [
     {
       id: 'approvals',
       title: 'Approvals',
-      value: '63',
+      value: '73',
       subtitle: 'Pending actions',
       change: '+8 today',
       icon: FiCheckSquare,
@@ -91,7 +94,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 w-full overflow-x-hidden">
-      {/* Compact Header Stats */}
+      {/* Compact Header Stats
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
         <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
@@ -136,10 +139,10 @@ export default function DashboardPage() {
           <div className="text-xl sm:text-2xl font-bold text-gray-900">₹67L</div>
           <div className="text-[10px] sm:text-xs text-gray-600">Monthly Sales</div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Metric Cards - Modern Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 pt-4 sm:pt-6 px-2 sm:px-4">
         {metrics.map((metric) => {
           const Icon = metric.icon
           const isActive = activeSection === metric.id
@@ -151,7 +154,7 @@ export default function DashboardPage() {
               className={`
                 relative group cursor-pointer transition-all duration-300 transform
                 ${isActive
-                  ? 'scale-105 shadow-2xl ring-4 ring-sky-400/30'
+                  ? 'scale-105 shadow-2xl'
                   : 'hover:scale-105 hover:shadow-xl'
                 }
               `}

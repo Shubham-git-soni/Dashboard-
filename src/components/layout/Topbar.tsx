@@ -14,7 +14,7 @@ export default function Topbar() {
       {/* Main Topbar */}
       <div className="h-14 px-4 sm:px-6 lg:px-6 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left Section */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 ml-12 lg:ml-0">
+        <div className="flex items-center gap-2 sm:gap-4 ml-12 lg:ml-0">
           {/* Title */}
           <div className="hidden md:block">
             <h1 className="text-sm lg:text-base font-bold text-gray-900">Dashboard</h1>
@@ -22,18 +22,18 @@ export default function Topbar() {
               {format(today, 'EEE, MMM d, yyyy')}
             </p>
           </div>
+        </div>
 
-          {/* Search */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <FiSearch className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="pl-8 sm:pl-9 pr-2 h-8 sm:h-9 text-xs sm:text-sm bg-gray-50 border-gray-200 focus:bg-white focus:border-sky-400 transition-all"
-              />
-             
-            </div>
+        {/* Center Search */}
+        <div className="flex-1 max-w-md mx-auto">
+          <div className="relative">
+            <FiSearch className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="pl-8 sm:pl-9 pr-2 h-8 sm:h-9 text-xs sm:text-sm bg-gray-50 border-gray-200 focus:bg-white focus:border-sky-400 transition-all"
+            />
+
           </div>
         </div>
 

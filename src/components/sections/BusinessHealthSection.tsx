@@ -377,31 +377,29 @@ export default function BusinessHealthSection() {
               </ResponsiveContainer>
             </div>
 
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="min-w-[280px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-xs sm:text-sm">Region</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-xs sm:text-sm">Sales</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-xs sm:text-sm">Growth</th>
+            <div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Region</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Sales</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Growth</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {regionSalesData.map((region, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm font-medium">{region.region}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm text-right">₹{region.sales}L</td>
+                      <td className="py-2 px-2 sm:px-3 text-right">
+                        <Badge variant={region.growth >= 10 ? 'success' : 'secondary'} className="text-[9px] sm:text-xs">
+                          +{region.growth}%
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {regionSalesData.map((region, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm font-medium">{region.region}</td>
-                        <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm text-right">₹{region.sales}L</td>
-                        <td className="py-2 px-2 sm:px-3 text-right">
-                          <Badge variant={region.growth >= 10 ? 'success' : 'secondary'} className="text-xs">
-                            +{region.growth}%
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </CardContent>
@@ -441,33 +439,53 @@ export default function BusinessHealthSection() {
               </ResponsiveContainer>
             </div>
 
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="min-w-[400px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Order No</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Client</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Value</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Status</th>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Order No</th>
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Client</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Value</th>
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {newOrdersList.map((order, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{order.orderNo}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm">{order.client}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">{order.value}</td>
+                      <td className="py-2 px-2 sm:px-3">
+                        <Badge variant={order.status === 'Confirmed' ? 'success' : 'secondary'} className="text-[9px] sm:text-[10px]">
+                          {order.status}
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {newOrdersList.map((order, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{order.orderNo}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm">{order.client}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">{order.value}</td>
-                        <td className="py-2 px-2 sm:px-3">
-                          <Badge variant={order.status === 'Confirmed' ? 'success' : 'secondary'} className="text-[9px] sm:text-[10px]">
-                            {order.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {newOrdersList.map((order, index) => (
+                <div key={index} className="py-3 space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1">
+                      <p className="text-[11px] font-semibold text-gray-900">{order.orderNo}</p>
+                      <p className="text-[10px] text-gray-600 mt-0.5">{order.client}</p>
+                    </div>
+                    <Badge variant={order.status === 'Confirmed' ? 'success' : 'secondary'} className="text-[9px]">
+                      {order.status}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-gray-500">Value:</span>
+                    <span className="text-[11px] font-semibold text-gray-900">{order.value}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -509,33 +527,56 @@ export default function BusinessHealthSection() {
               </ResponsiveContainer>
             </div>
 
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="min-w-[400px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Customer</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Sales</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Orders</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Growth</th>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Customer</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Sales</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Orders</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Growth</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customersBySalesVolume.map((customer, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{customer.name}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">₹{customer.sales}L</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{customer.orders}</td>
+                      <td className="py-2 px-2 sm:px-3 text-right">
+                        <Badge variant={customer.growth >= 10 ? 'success' : 'secondary'} className="text-[9px] sm:text-[10px]">
+                          +{customer.growth}%
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {customersBySalesVolume.map((customer, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{customer.name}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">₹{customer.sales}L</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{customer.orders}</td>
-                        <td className="py-2 px-2 sm:px-3 text-right">
-                          <Badge variant={customer.growth >= 10 ? 'success' : 'secondary'} className="text-[9px] sm:text-[10px]">
-                            +{customer.growth}%
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {customersBySalesVolume.map((customer, index) => (
+                <div key={index} className="py-3 space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="text-[11px] font-semibold text-gray-900 flex-1">{customer.name}</p>
+                    <Badge variant={customer.growth >= 10 ? 'success' : 'secondary'} className="text-[9px]">
+                      +{customer.growth}%
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Sales</span>
+                      <span className="text-[11px] font-semibold text-gray-900">₹{customer.sales}L</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Orders</span>
+                      <span className="text-[11px] text-gray-900">{customer.orders}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -588,29 +629,51 @@ export default function BusinessHealthSection() {
               </ResponsiveContainer>
             </div>
 
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="min-w-[400px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Product</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Qty</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Value</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Avg Price</th>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Product</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Qty</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Value</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Avg Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productWiseSalesDetailed.map((product, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{product.product}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{product.qty.toLocaleString()}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">₹{product.value}L</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">₹{product.avgPrice}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {productWiseSalesDetailed.map((product, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{product.product}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{product.qty.toLocaleString()}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">₹{product.value}L</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">₹{product.avgPrice}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {productWiseSalesDetailed.map((product, index) => (
+                <div key={index} className="py-3 space-y-2">
+                  <p className="text-[11px] font-semibold text-gray-900">{product.product}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Quantity</span>
+                      <span className="text-[10px] text-gray-900">{product.qty.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Value</span>
+                      <span className="text-[10px] font-semibold text-gray-900">₹{product.value}L</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Avg Price</span>
+                      <span className="text-[10px] text-gray-900">₹{product.avgPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -655,36 +718,62 @@ export default function BusinessHealthSection() {
               </ResponsiveContainer>
             </div>
 
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="min-w-[360px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Category</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Avg Days</th>
-                      <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Target</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Status</th>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Category</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Avg Days</th>
+                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Target</th>
+                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {avgProcessingData.map((item, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{item.category}</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">{item.avgDays} days</td>
+                      <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{item.targetDays} days</td>
+                      <td className="py-2 px-2 sm:px-3">
+                        <Badge
+                          variant={item.status === 'On-Time' ? 'success' : item.status === 'Early' ? 'default' : 'destructive'}
+                          className="text-[9px] sm:text-[10px]"
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {avgProcessingData.map((item, index) => (
-                      <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm font-medium">{item.category}</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right font-semibold">{item.avgDays} days</td>
-                        <td className="py-2 px-2 sm:px-3 text-[10px] sm:text-sm text-right">{item.targetDays} days</td>
-                        <td className="py-2 px-2 sm:px-3">
-                          <Badge
-                            variant={item.status === 'On-Time' ? 'success' : item.status === 'Early' ? 'default' : 'destructive'}
-                            className="text-[9px] sm:text-[10px]"
-                          >
-                            {item.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {avgProcessingData.map((item, index) => (
+                <div key={index} className="py-3 space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="text-[11px] font-semibold text-gray-900 flex-1">{item.category}</p>
+                    <Badge
+                      variant={item.status === 'On-Time' ? 'success' : item.status === 'Early' ? 'default' : 'destructive'}
+                      className="text-[9px]"
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Avg Days</span>
+                      <span className="text-[11px] font-semibold text-gray-900">{item.avgDays} days</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-gray-500 block">Target</span>
+                      <span className="text-[11px] text-gray-900">{item.targetDays} days</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -695,38 +784,69 @@ export default function BusinessHealthSection() {
         <CardHeader>
           <CardTitle className="text-xs sm:text-sm lg:text-base">Executive-wise Sales & Performance</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <div className="min-w-[600px]">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Executive Name</th>
-                    <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Sales Qty</th>
-                    <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Sales Value</th>
-                    <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">New Clients</th>
-                    <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Old Clients</th>
-                    <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Performance</th>
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          {/* Desktop Table */}
+          <div className="hidden lg:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Executive Name</th>
+                  <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Sales Qty</th>
+                  <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Sales Value</th>
+                  <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">New Clients</th>
+                  <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Old Clients</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-700 text-[10px] sm:text-xs lg:text-sm">Performance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {executiveData.map((exec, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm font-medium">{exec.name}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.salesQty}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right font-semibold">₹{exec.salesValue}L</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.newClients}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.oldClients}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4">
+                      <Badge variant={exec.salesValue > 25 ? 'success' : exec.salesValue > 20 ? 'secondary' : 'warning'} className="text-[9px] sm:text-[10px] lg:text-xs">
+                        {exec.salesValue > 25 ? 'Excellent' : exec.salesValue > 20 ? 'Good' : 'Average'}
+                      </Badge>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {executiveData.map((exec, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm font-medium">{exec.name}</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.salesQty}</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right font-semibold">₹{exec.salesValue}L</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.newClients}</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-xs lg:text-sm text-right">{exec.oldClients}</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4">
-                        <Badge variant={exec.salesValue > 25 ? 'success' : exec.salesValue > 20 ? 'secondary' : 'warning'} className="text-[9px] sm:text-[10px] lg:text-xs">
-                          {exec.salesValue > 25 ? 'Excellent' : exec.salesValue > 20 ? 'Good' : 'Average'}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile/Tablet Cards */}
+          <div className="lg:hidden divide-y divide-gray-100">
+            {executiveData.map((exec, index) => (
+              <div key={index} className="py-3 space-y-2.5">
+                <div className="flex justify-between items-start gap-2 pb-2 border-b border-gray-100">
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm font-bold text-gray-900">{exec.name}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Sales Value: ₹{exec.salesValue}L</p>
+                  </div>
+                  <Badge variant={exec.salesValue > 25 ? 'success' : exec.salesValue > 20 ? 'secondary' : 'warning'} className="text-[9px]">
+                    {exec.salesValue > 25 ? 'Excellent' : exec.salesValue > 20 ? 'Good' : 'Average'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Sales Qty</span>
+                    <span className="text-[11px] text-gray-900">{exec.salesQty}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">New Clients</span>
+                    <span className="text-[11px] text-gray-900">{exec.newClients}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Old Clients</span>
+                    <span className="text-[11px] text-gray-900">{exec.oldClients}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -127,29 +127,30 @@ interface PendingItemsTableProps {
 function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, data, columns }: PendingItemsTableProps) {
   return (
     <Card>
-      <CardHeader className={`${bgColor} border-b`}>
+      <CardHeader className={`${bgColor} border-b p-3 sm:p-6`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 sm:p-2.5 rounded-lg bg-white shadow-sm">
-              <Icon className={color} size={16} />
+              <Icon className={color} size={14} />
             </div>
             <div>
-              <CardTitle className="text-sm sm:text-base font-bold">{title}</CardTitle>
-              <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">{value}</p>
+              <CardTitle className="text-xs sm:text-sm lg:text-base font-bold">{title}</CardTitle>
+              <p className="text-[9px] sm:text-[10px] lg:text-xs text-gray-600 mt-0.5">{value}</p>
             </div>
           </div>
-          <Badge className={`${color.replace('text-', 'bg-')} text-white font-bold text-xs sm:text-sm h-6 sm:h-7 px-2 sm:px-3`}>
+          <Badge className={`${color.replace('text-', 'bg-')} text-white font-bold text-[10px] sm:text-xs h-5 sm:h-6 lg:h-7 px-2 sm:px-3`}>
             {count} Items
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto -mx-2 sm:mx-0">
-          <table className="w-full min-w-[600px]">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 {columns.map((col) => (
-                  <th key={col.key} className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <th key={col.key} className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     {col.label}
                   </th>
                 ))}
@@ -179,6 +180,37 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {data.map((row, idx) => (
+            <div key={idx} className="p-3 hover:bg-gray-50 transition-colors">
+              <div className="space-y-2">
+                {columns.map((col) => (
+                  <div key={col.key} className="flex justify-between items-start gap-2">
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide min-w-[80px]">
+                      {col.label}
+                    </span>
+                    <div className="text-right flex-1">
+                      {col.key === 'status' ? (
+                        <Badge
+                          variant={row.delay > 0 ? 'destructive' : 'success'}
+                          className="text-[9px]"
+                        >
+                          {row.delay > 0 ? `Delayed ${row.delay}d` : 'On-Time'}
+                        </Badge>
+                      ) : (
+                        <span className={`text-[11px] ${col.key.includes('value') ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                          {row[col.key]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
@@ -197,35 +229,36 @@ export default function DailyUpdateSection() {
 
       {/* Order BOM Check Table */}
       <Card>
-        <CardHeader className="bg-blue-50 border-b">
+        <CardHeader className="bg-blue-50 border-b p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 sm:p-2.5 rounded-lg bg-white shadow-sm">
-                <FiFileText className="text-blue-600" size={16} />
+                <FiFileText className="text-blue-600" size={14} />
               </div>
               <div>
-                <CardTitle className="text-sm sm:text-base font-bold">Order BOM Check</CardTitle>
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Real-time production status and material availability</p>
+                <CardTitle className="text-xs sm:text-sm lg:text-base font-bold">Order BOM Check</CardTitle>
+                <p className="text-[9px] sm:text-[10px] lg:text-xs text-gray-600 mt-0.5">Real-time production status and material availability</p>
               </div>
             </div>
-            <Badge className="bg-blue-600 text-white font-bold text-xs sm:text-sm h-6 sm:h-7 px-2 sm:px-3">
+            <Badge className="bg-blue-600 text-white font-bold text-[10px] sm:text-xs h-5 sm:h-6 lg:h-7 px-2 sm:px-3">
               {orderBOMData.length} Active Orders
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <table className="w-full min-w-[800px]">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Order Date</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Client Name</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Job Name</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Plate</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Die</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Paper</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Paper Issued</th>
-                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">Production Status</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Order Date</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Client Name</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Job Name</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Plate</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Die</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Paper</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Paper Issued</th>
+                  <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">Production Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -259,6 +292,60 @@ export default function DailyUpdateSection() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden divide-y divide-gray-100">
+            {orderBOMData.map((order, idx) => (
+              <div key={idx} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                <div className="space-y-2.5">
+                  {/* Header Row */}
+                  <div className="flex justify-between items-start gap-2 pb-2 border-b border-gray-100">
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-sm font-bold text-gray-900">{order.clientName}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">{order.jobName}</p>
+                    </div>
+                    <Badge variant={order.productionStatus === 'Pending' ? 'secondary' : 'default'} className="text-[9px] whitespace-nowrap">
+                      {order.productionStatus}
+                    </Badge>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Order Date</span>
+                      <span className="text-[11px] text-gray-700">{order.orderDate}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">Paper Issued</span>
+                      <span className="text-[11px] text-gray-900 font-semibold">{order.paperIssued}</span>
+                    </div>
+                  </div>
+
+                  {/* Material Status */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Plate:</span>
+                      <Badge variant={order.plate.includes('Received') ? 'success' : 'secondary'} className="text-[8px] h-4 px-1.5">
+                        {order.plate}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Die:</span>
+                      <Badge variant={order.die.includes('Received') || order.die === 'Available' ? 'success' : 'secondary'} className="text-[8px] h-4 px-1.5">
+                        {order.die}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Paper:</span>
+                      <Badge variant={order.paper === 'Available' ? 'success' : 'warning'} className="text-[8px] h-4 px-1.5">
+                        {order.paper}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
