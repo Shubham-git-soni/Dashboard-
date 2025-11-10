@@ -35,6 +35,66 @@ export default function BusinessHealthSection() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Fetch Region-wise Sales Data
+  useEffect(() => {
+    const fetchRegionSales = async () => {
+      try {
+        setRegionLoading(true)
+
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        // Calculate date range (last 12 months)
+        const toDate = new Date()
+        const fromDate = new Date()
+        fromDate.setMonth(fromDate.getMonth() - 12)
+
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+          'FromDate': fromDate.toISOString().split('T')[0],
+          'ToDate': toDate.toISOString().split('T')[0],
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}BusinessHealth/RegionWiseSales`,
+          { method: 'GET', headers }
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Region-wise Sales - Count:', Array.isArray(data) ? data.length : 0)
+          console.log('📊 Region-wise Sales - Data:', data)
+
+          // Map API data to component format
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedData = data.map((item: any) => ({
+              region: item.City || 'Unknown',
+              country: item.Country || 'Unknown',
+              sales: parseFloat((item.CurrentYearSales / 100000).toFixed(1)) || 0, // Convert to lakhs
+              previousSales: item.PreviousYearSales ? parseFloat((item.PreviousYearSales / 100000).toFixed(1)) : 0,
+              growth: item.GrowthPercent ? parseFloat(item.GrowthPercent.toFixed(1)) : 0,
+              difference: item.Difference ? parseFloat((item.Difference / 100000).toFixed(1)) : 0
+            }))
+            setRegionSalesData(mappedData)
+          }
+        } else {
+          console.error('❌ Region-wise Sales Error:', response.status, response.statusText)
+        }
+      } catch (error) {
+        console.error('Failed to fetch region sales:', error)
+      } finally {
+        setRegionLoading(false)
+      }
+    }
+
+    fetchRegionSales()
+  }, [])
+
   // Sales Trend Data
   const salesTrendData = [
     { month: 'Jan', current: 45, past: 38 },
@@ -71,13 +131,35 @@ export default function BusinessHealthSection() {
     { product: 'Business Cards', sales: 45, value: 5.2 }
   ]
 
-  // Region-wise Sales
-  const regionSalesData = [
-    { region: 'Indore', sales: 45, growth: 12 },
-    { region: 'Pithampur', sales: 35, growth: 8 },
-    { region: 'Pan-India', sales: 65, growth: 15 },
-    { region: 'Others', sales: 25, growth: 5 }
-  ]
+  // Region-wise Sales (Dynamic)
+  const [regionSalesData, setRegionSalesData] = useState<{
+    region: string
+    country: string
+    sales: number
+    previousSales: number
+    growth: number
+    difference: number
+  }[]>([
+    { region: 'Indore', country: 'India', sales: 45, previousSales: 38, growth: 12, difference: 7 },
+    { region: 'Pithampur', country: 'India', sales: 35, previousSales: 30, growth: 8, difference: 5 },
+    { region: 'Pan-India', country: 'India', sales: 65, previousSales: 55, growth: 15, difference: 10 },
+    { region: 'Others', country: 'India', sales: 25, previousSales: 23, growth: 5, difference: 2 }
+  ])
+  const [regionLoading, setRegionLoading] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<string>('all')
+
+  // Filter region sales data based on selected region
+  const filteredRegionData = React.useMemo(() => {
+    if (selectedRegion === 'all') {
+      return regionSalesData
+    }
+    return regionSalesData.filter(item => item.region === selectedRegion)
+  }, [regionSalesData, selectedRegion])
+
+  // Get unique regions for filter dropdown
+  const availableRegions = React.useMemo(() => {
+    return ['all', ...Array.from(new Set(regionSalesData.map(item => item.region)))]
+  }, [regionSalesData])
 
   // Executive Performance
   const executiveData = [
@@ -336,13 +418,34 @@ export default function BusinessHealthSection() {
       {/* Region-wise Sales */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xs sm:text-sm lg:text-base">Region-wise Sales Performance</CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+            <CardTitle className="text-xs sm:text-sm lg:text-base">Region-wise Sales Performance</CardTitle>
+
+            {/* Region Filter Dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] sm:text-xs text-gray-600">Filter:</label>
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                {availableRegions.map((region) => (
+                  <option key={region} value={region}>
+                    {region === 'all' ? 'All Regions' : region}
+                  </option>
+                ))}
+              </select>
+              <Badge variant="outline" className="text-[10px] sm:text-xs">
+                {filteredRegionData.length} {filteredRegionData.length === 1 ? 'Region' : 'Regions'}
+              </Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pb-2 sm:pb-3 lg:pb-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <div className="h-[160px] sm:h-[200px] lg:h-[240px] -mx-2 sm:mx-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={regionSalesData} margin={{ top: 5, right: 25, left: -15, bottom: 5 }}>
+                <BarChart data={filteredRegionData} margin={{ top: 5, right: 25, left: -15, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="region"
@@ -378,28 +481,46 @@ export default function BusinessHealthSection() {
             </div>
 
             <div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Region</th>
-                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Sales</th>
-                    <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs">Growth</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {regionSalesData.map((region, index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm font-medium">{region.region}</td>
-                      <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm text-right">₹{region.sales}L</td>
-                      <td className="py-2 px-2 sm:px-3 text-right">
-                        <Badge variant={region.growth >= 10 ? 'success' : 'secondary'} className="text-[9px] sm:text-xs">
-                          +{region.growth}%
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {regionLoading ? (
+                <div className="flex items-center justify-center h-[200px]">
+                  <p className="text-sm text-gray-500">Loading region data...</p>
+                </div>
+              ) : (
+                <div className="max-h-[240px] overflow-y-auto scrollbar-thin">
+                  <table className="w-full">
+                    <thead className="sticky top-0 bg-white z-10">
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs bg-gray-50">Region (City)</th>
+                        <th className="text-left py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs bg-gray-50">Country</th>
+                        <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs bg-gray-50">Current Sales</th>
+                        <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs bg-gray-50">Previous</th>
+                        <th className="text-right py-2 px-2 sm:px-3 font-medium text-gray-700 text-[10px] sm:text-xs bg-gray-50">Growth</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRegionData.map((region, index) => (
+                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm font-medium">{region.region}</td>
+                          <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm text-gray-600">{region.country}</td>
+                          <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm text-right font-semibold">₹{region.sales}L</td>
+                          <td className="py-2 px-2 sm:px-3 text-[11px] sm:text-sm text-right text-gray-600">
+                            {region.previousSales > 0 ? `₹${region.previousSales}L` : 'N/A'}
+                          </td>
+                          <td className="py-2 px-2 sm:px-3 text-right">
+                            {region.growth !== null && region.growth !== 0 ? (
+                              <Badge variant={region.growth >= 10 ? 'success' : region.growth > 0 ? 'secondary' : 'destructive'} className="text-[9px] sm:text-xs">
+                                {region.growth > 0 ? '+' : ''}{region.growth}%
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] sm:text-xs">New</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

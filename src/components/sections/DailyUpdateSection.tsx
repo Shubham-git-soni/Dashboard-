@@ -11,7 +11,10 @@ import {
   FiPackage,
   FiAlertCircle,
   FiCheckCircle,
-  FiClock
+  FiClock,
+  FiSearch,
+  FiFilter,
+  FiX
 } from 'react-icons/fi'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useWindowSize } from '@/hooks/useWindowSize'
@@ -73,18 +76,18 @@ const orderBOMData = [
 
 // Pending Sales POs
 const pendingSalesPOs = [
-  { poNumber: 'SO-2024-125', client: 'ABC Corp', value: '₹2,50,000', dueDate: '2024-01-20', delay: 2, status: 'delayed' },
-  { poNumber: 'SO-2024-124', client: 'XYZ Industries', value: '₹1,85,000', dueDate: '2024-01-22', delay: 0, status: 'on-time' },
-  { poNumber: 'SO-2024-123', client: 'Premium Prints', value: '₹95,000', dueDate: '2024-01-25', delay: 5, status: 'delayed' },
-  { poNumber: 'SO-2024-122', client: 'Deluxe Packaging', value: '₹3,20,000', dueDate: '2024-01-18', delay: 0, status: 'on-time' }
+  { poNumber: 'SO-2024-125', client: 'ABC Corp', jobName: 'Brochure Printing', value: '₹2,50,000', deliveryDate: '2024-01-22', expectedDate: '2024-01-20', dueDate: '2024-01-20', delay: 2, status: 'delayed' },
+  { poNumber: 'SO-2024-124', client: 'XYZ Industries', jobName: 'Packaging Boxes', value: '₹1,85,000', deliveryDate: '2024-01-21', expectedDate: '2024-01-22', dueDate: '2024-01-22', delay: 0, status: 'on-time' },
+  { poNumber: 'SO-2024-123', client: 'Premium Prints', jobName: 'Catalogs', value: '₹95,000', deliveryDate: 'N/A', expectedDate: '2024-01-25', dueDate: '2024-01-25', delay: 5, status: 'delayed' },
+  { poNumber: 'SO-2024-122', client: 'Deluxe Packaging', jobName: 'Labels', value: '₹3,20,000', deliveryDate: '2024-01-17', expectedDate: '2024-01-18', dueDate: '2024-01-18', delay: 0, status: 'on-time' }
 ]
 
 // Pending Deliveries
 const pendingDeliveries = [
-  { deliveryNo: 'DEL-2024-089', client: 'ABC Corp', value: '₹1,50,000', scheduled: '2024-01-16', delay: 1, status: 'delayed' },
-  { deliveryNo: 'DEL-2024-088', client: 'XYZ Industries', value: '₹2,25,000', scheduled: '2024-01-17', delay: 0, status: 'on-time' },
-  { deliveryNo: 'DEL-2024-087', client: 'Elite Graphics', value: '₹85,000', scheduled: '2024-01-15', delay: 3, status: 'delayed' },
-  { deliveryNo: 'DEL-2024-086', client: 'Modern Prints', value: '₹1,95,000', scheduled: '2024-01-18', delay: 0, status: 'on-time' }
+  { deliveryNo: 'DEL-2024-089', client: 'ABC Corp', jobName: 'Brochure Printing', value: '₹1,50,000', scheduled: '2024-01-16', delay: 1, status: 'delayed' },
+  { deliveryNo: 'DEL-2024-088', client: 'XYZ Industries', jobName: 'Packaging Boxes', value: '₹2,25,000', scheduled: '2024-01-17', delay: 0, status: 'on-time' },
+  { deliveryNo: 'DEL-2024-087', client: 'Elite Graphics', jobName: 'Business Cards', value: '₹85,000', scheduled: '2024-01-15', delay: 3, status: 'delayed' },
+  { deliveryNo: 'DEL-2024-086', client: 'Modern Prints', jobName: 'Catalogs', value: '₹1,95,000', scheduled: '2024-01-18', delay: 0, status: 'on-time' }
 ]
 
 // Pending Purchase POs
@@ -101,18 +104,6 @@ const pendingGRN = [
   { grnNo: 'GRN-2024-243', vendor: 'Die Makers', value: '₹75,000', poNumber: 'PO-2024-143', delay: 1, status: 'delayed' }
 ]
 
-// Chart data for visualization
-const salesPOChartData = [
-  { name: 'On-Time', count: 15, value: 45 },
-  { name: 'Delayed', count: 8, value: 22 }
-]
-
-const deliveryChartData = [
-  { name: 'Completed', count: 45, value: 120 },
-  { name: 'Pending', count: 12, value: 35 },
-  { name: 'Delayed', count: 5, value: 15 }
-]
-
 interface PendingItemsTableProps {
   title: string
   icon: React.ElementType
@@ -125,9 +116,27 @@ interface PendingItemsTableProps {
 }
 
 function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, data, columns }: PendingItemsTableProps) {
+  const [searchTerm, setSearchTerm] = React.useState('')
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'on-time' | 'delayed'>('all')
+
+  // Filter data based on search and status
+  const filteredData = React.useMemo(() => {
+    return data.filter((item) => {
+      // Search filter
+      const searchMatch = Object.values(item).some((val) =>
+        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+
+      // Status filter
+      const statusMatch = statusFilter === 'all' || item.status === statusFilter
+
+      return searchMatch && statusMatch
+    })
+  }, [data, searchTerm, statusFilter])
+
   return (
     <Card>
-      <CardHeader className={`${bgColor} border-b p-3 sm:p-6`}>
+      <CardHeader className={`${bgColor} border-b p-3 sm:p-6 space-y-3 sm:space-y-4`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 sm:p-2.5 rounded-lg bg-white shadow-sm">
@@ -142,22 +151,86 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
             {count} Items
           </Badge>
         </div>
+
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search by client, job, order no..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'on-time' | 'delayed')}
+                className="pl-8 pr-8 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white appearance-none cursor-pointer"
+              >
+                <option value="all">All Status</option>
+                <option value="on-time">On-Time</option>
+                <option value="delayed">Delayed</option>
+              </select>
+            </div>
+
+            {/* Results Count */}
+            <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap">
+              {filteredData.length} of {data.length}
+            </Badge>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                {columns.map((col) => (
-                  <th key={col.key} className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, idx) => (
+        {/* Empty State */}
+        {filteredData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <FiSearch className="text-gray-300 mb-3" size={48} />
+            <p className="text-sm font-medium text-gray-600">No results found</p>
+            <p className="text-xs text-gray-500 mt-1">Try adjusting your search or filter</p>
+            {(searchTerm || statusFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setStatusFilter('all')
+                }}
+                className="mt-4 text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View with Scrollbar */}
+            <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {columns.map((col) => (
+                      <th key={col.key} className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((row, idx) => (
                 <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   {columns.map((col) => (
                     <td key={col.key} className="py-2 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-sm">
@@ -181,9 +254,9 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
           </table>
         </div>
 
-        {/* Mobile Card View */}
-        <div className="md:hidden divide-y divide-gray-100">
-          {data.map((row, idx) => (
+        {/* Mobile Card View with Scrollbar */}
+        <div className="md:hidden divide-y divide-gray-100 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+          {filteredData.map((row, idx) => (
             <div key={idx} className="p-3 hover:bg-gray-50 transition-colors">
               <div className="space-y-2">
                 {columns.map((col) => (
@@ -211,6 +284,8 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
             </div>
           ))}
         </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )
@@ -219,6 +294,198 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
 export default function DailyUpdateSection() {
   const { isMobile, isTablet } = useWindowSize()
   const chartConfig = getChartConfig(isMobile, isTablet)
+
+  // State for dynamic data
+  const [salesPOsData, setSalesPOsData] = React.useState(pendingSalesPOs)
+  const [deliveriesData, setDeliveriesData] = React.useState(pendingDeliveries)
+  const [loading, setLoading] = React.useState(false)
+
+  // Calculate chart data dynamically
+  const salesPOChartData = React.useMemo(() => {
+    const onTimeCount = salesPOsData.filter(item => item.status === 'on-time').length
+    const delayedCount = salesPOsData.filter(item => item.status === 'delayed').length
+
+    const onTimeValue = salesPOsData
+      .filter(item => item.status === 'on-time')
+      .reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000 // Convert to lakhs
+
+    const delayedValue = salesPOsData
+      .filter(item => item.status === 'delayed')
+      .reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000 // Convert to lakhs
+
+    return [
+      { name: 'On-Time', count: onTimeCount, value: parseFloat(onTimeValue.toFixed(1)) },
+      { name: 'Delayed', count: delayedCount, value: parseFloat(delayedValue.toFixed(1)) }
+    ]
+  }, [salesPOsData])
+
+  const deliveryChartData = React.useMemo(() => {
+    const onTimeCount = deliveriesData.filter(item => item.status === 'on-time').length
+    const delayedCount = deliveriesData.filter(item => item.status === 'delayed').length
+    const totalCount = deliveriesData.length
+
+    const onTimeValue = deliveriesData
+      .filter(item => item.status === 'on-time')
+      .reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000
+
+    const delayedValue = deliveriesData
+      .filter(item => item.status === 'delayed')
+      .reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000
+
+    return [
+      { name: 'On-Time', count: onTimeCount, value: parseFloat(onTimeValue.toFixed(1)) },
+      { name: 'Delayed', count: delayedCount, value: parseFloat(delayedValue.toFixed(1)) },
+      { name: 'Total Pending', count: totalCount, value: parseFloat(((onTimeValue + delayedValue)).toFixed(1)) }
+    ]
+  }, [deliveriesData])
+
+  // Fetch Pending Sales Orders and Deliveries
+  React.useEffect(() => {
+    const fetchDailyUpdates = async () => {
+      try {
+        setLoading(true)
+
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        // Calculate date range (last 30 days)
+        const toDate = new Date()
+        const fromDate = new Date()
+        fromDate.setDate(fromDate.getDate() - 30)
+
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+          'FromDate': fromDate.toISOString().split('T')[0], // YYYY-MM-DD format
+          'ToDate': toDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        }
+
+        // Fetch Pending Sales Orders
+        const salesPOsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingSalesOrders`,
+          { method: 'GET', headers }
+        )
+
+        // Fetch Pending Deliveries
+        const deliveriesResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingDeliveries`,
+          { method: 'GET', headers }
+        )
+
+        let salesPOsApiData = []
+        let deliveriesApiData = []
+
+        if (salesPOsResponse.ok) {
+          salesPOsApiData = await salesPOsResponse.json()
+          console.log('✅ Pending Sales Orders - Count:', Array.isArray(salesPOsApiData) ? salesPOsApiData.length : 0)
+          console.log('📊 Pending Sales Orders - Data:', salesPOsApiData)
+
+          // Map API data to component format
+          if (Array.isArray(salesPOsApiData) && salesPOsApiData.length > 0) {
+            const mappedData = salesPOsApiData.map((item: any) => {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0) // Reset time to start of day
+
+              // Use current date if DeliveryDate is null, otherwise use DeliveryDate
+              const comparisonDate = item.DeliveryDate
+                ? new Date(item.DeliveryDate)
+                : today // Current system date
+
+              comparisonDate.setHours(0, 0, 0, 0)
+
+              const expectedDate = item.ExpectedDeliveryDate
+                ? new Date(item.ExpectedDeliveryDate)
+                : null
+
+              if (expectedDate) {
+                expectedDate.setHours(0, 0, 0, 0)
+              }
+
+              // Calculate delay and status
+              let delayDays = 0
+              let calculatedStatus = 'on-time'
+              let displayDeliveryDate = item.DeliveryDate || 'Pending'
+
+              if (expectedDate) {
+                // Calculate difference in days
+                const diffTime = comparisonDate.getTime() - expectedDate.getTime()
+                const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+                // Status decide karo based on comparison
+                if (daysDiff > 0) {
+                  // Late hai (comparison date > expected date)
+                  delayDays = daysDiff
+                  calculatedStatus = 'delayed'
+                } else {
+                  // On-time hai (comparison date <= expected date)
+                  delayDays = 0
+                  calculatedStatus = 'on-time'
+                }
+              }
+
+              return {
+                poNumber: item.SalesOrderNo || 'N/A',
+                client: item.ClientName || 'N/A',
+                jobName: item.JobName || 'N/A',
+                value: `₹${item.NetAmount?.toLocaleString('en-IN') || '0'}`,
+                deliveryDate: displayDeliveryDate,
+                expectedDate: item.ExpectedDeliveryDate || 'N/A',
+                dueDate: item.ExpectedDeliveryDate || 'N/A',
+                delay: delayDays,
+                status: calculatedStatus
+              }
+            })
+            setSalesPOsData(mappedData)
+          }
+        } else {
+          console.error('❌ Pending Sales Orders Error:', salesPOsResponse.status, salesPOsResponse.statusText)
+        }
+
+        if (deliveriesResponse.ok) {
+          deliveriesApiData = await deliveriesResponse.json()
+          console.log('✅ Pending Deliveries - Count:', Array.isArray(deliveriesApiData) ? deliveriesApiData.length : 0)
+          console.log('📊 Pending Deliveries - Data:', deliveriesApiData)
+
+          // Map API data to component format
+          if (Array.isArray(deliveriesApiData) && deliveriesApiData.length > 0) {
+            const mappedData = deliveriesApiData.map((item: any) => {
+              // Calculate delay days if DeliveryStatus is "Delay"
+              let delayDays = 0
+              if (item.DeliveryStatus === 'Delay' && item.ExpectedDeliveryDate) {
+                const expectedDate = new Date(item.ExpectedDeliveryDate)
+                const today = new Date()
+                const diffTime = today.getTime() - expectedDate.getTime()
+                delayDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
+              }
+
+              return {
+                deliveryNo: item.SalesOrderNo || 'N/A',
+                client: item.ClientName || 'N/A',
+                jobName: item.JobName || 'N/A',
+                value: `₹${item.NetAmount?.toLocaleString('en-IN') || '0'}`,
+                scheduled: item.ExpectedDeliveryDate || item.DeliveryDate || 'N/A',
+                delay: delayDays,
+                status: item.DeliveryStatus === 'Delay' ? 'delayed' : 'on-time'
+              }
+            })
+            setDeliveriesData(mappedData)
+          }
+        } else {
+          console.error('❌ Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
+        }
+      } catch (error) {
+        console.error('Failed to fetch daily updates:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDailyUpdates()
+  }, [])
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6">
@@ -354,7 +621,12 @@ export default function DailyUpdateSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm sm:text-base font-semibold">Sales POs Status</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm sm:text-base font-semibold">Sales POs Status</CardTitle>
+              <Badge variant="outline" className="text-[10px] sm:text-xs">
+                {salesPOsData.length} Total
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
             <ResponsiveChartWrapper>
@@ -374,13 +646,18 @@ export default function DailyUpdateSection() {
                   <Tooltip
                     contentStyle={chartConfig.tooltipStyle}
                     cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                    formatter={(value: any, name: string) => {
+                      if (name === 'Count') return [value, 'Orders']
+                      if (name === 'Value') return [`₹${value}L`, 'Value']
+                      return [value, name]
+                    }}
                   />
                   <Legend
                     wrapperStyle={chartConfig.legendStyle}
                     iconSize={chartConfig.iconSize}
                   />
                   <Bar dataKey="count" fill="#3b82f6" name="Count" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="value" fill="#10b981" name="Value" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill="#10b981" name="Value (₹L)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ResponsiveChartWrapper>
@@ -389,7 +666,12 @@ export default function DailyUpdateSection() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm sm:text-base font-semibold">Delivery Status</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm sm:text-base font-semibold">Delivery Status</CardTitle>
+              <Badge variant="outline" className="text-[10px] sm:text-xs">
+                {deliveriesData.length} Total
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
             <ResponsiveChartWrapper>
@@ -409,13 +691,18 @@ export default function DailyUpdateSection() {
                   <Tooltip
                     contentStyle={chartConfig.tooltipStyle}
                     cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
+                    formatter={(value: any, name: string) => {
+                      if (name === 'Count') return [value, 'Deliveries']
+                      if (name === 'Value (₹L)') return [`₹${value}L`, 'Value']
+                      return [value, name]
+                    }}
                   />
                   <Legend
                     wrapperStyle={chartConfig.legendStyle}
                     iconSize={chartConfig.iconSize}
                   />
                   <Bar dataKey="count" fill="#8b5cf6" name="Count" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="value" fill="#f59e0b" name="Value" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill="#f59e0b" name="Value (₹L)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ResponsiveChartWrapper>
@@ -429,14 +716,16 @@ export default function DailyUpdateSection() {
         icon={FiShoppingBag}
         color="text-blue-600"
         bgColor="bg-blue-50"
-        count={pendingSalesPOs.length}
-        value="Total Value: ₹8.5L"
-        data={pendingSalesPOs}
+        count={salesPOsData.length}
+        value={loading ? 'Loading...' : `Total Value: ₹${(salesPOsData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
+        data={salesPOsData}
         columns={[
-          { key: 'poNumber', label: 'PO Number' },
+          { key: 'poNumber', label: 'Sales Order No' },
           { key: 'client', label: 'Client' },
+          { key: 'jobName', label: 'Job Name' },
           { key: 'value', label: 'Value' },
-          { key: 'dueDate', label: 'Due Date' },
+          { key: 'deliveryDate', label: 'Delivery Date' },
+          { key: 'expectedDate', label: 'Expected Date' },
           { key: 'status', label: 'Status' }
         ]}
       />
@@ -447,14 +736,15 @@ export default function DailyUpdateSection() {
         icon={FiTruck}
         color="text-purple-600"
         bgColor="bg-purple-50"
-        count={pendingDeliveries.length}
-        value="Total Value: ₹6.5L"
-        data={pendingDeliveries}
+        count={deliveriesData.length}
+        value={loading ? 'Loading...' : `Total Value: ₹${(deliveriesData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
+        data={deliveriesData}
         columns={[
-          { key: 'deliveryNo', label: 'Delivery No' },
+          { key: 'deliveryNo', label: 'Sales Order No' },
           { key: 'client', label: 'Client' },
+          { key: 'jobName', label: 'Job Name' },
           { key: 'value', label: 'Value' },
-          { key: 'scheduled', label: 'Scheduled' },
+          { key: 'scheduled', label: 'Expected Delivery' },
           { key: 'status', label: 'Status' }
         ]}
       />

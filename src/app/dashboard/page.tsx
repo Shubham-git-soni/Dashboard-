@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   FiCheckSquare,
   FiCalendar,
@@ -20,11 +20,50 @@ import QCSection from '@/components/sections/QCSection'
 import BusinessHealthSection from '@/components/sections/BusinessHealthSection'
 import PurchasesSection from '@/components/sections/PurchasesSection'
 
+
+
+
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState<string | null>(null) 
-  const [pendingCount, setPendingCount] = useState(0)
+  const [activeSection, setActiveSection] = useState<string | null>(null)
+  const [mainHeader, setMainHeader] = useState("");
+  const [subHeader, setSubHeader] = useState("");
+  const [data, setData] = useState<any>(null); // store API data
+  const [loading, setLoading] = useState(false);
 
 
+  const username = process.env.NEXT_PUBLIC_API_USERNAME!;
+  const password = process.env.NEXT_PUBLIC_API_PASSWORD!;
+  const token = btoa(`${username}:${password}`); // Base64 encoding
+
+  const fetchData = async (mainHeader: string, subHeader: string) => {
+    try {
+      setLoading(true);
+
+      // const queryParams = new URLSearchParams({ mainHeader, subHeader });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}${mainHeader}/${subHeader}`,
+        
+        {
+
+          method: "GET",
+          headers: {
+            "Authorization": `Basic ${token}`,
+            "Content-Type": "application/json", 
+          }
+        }
+
+      );
+      console.log("Auth Token:", token);
+      console.log("API Response:", res);
+      const json = await res.json();
+      setData(json); // ✅ store response
+      console.log("API Response:", json);
+    } catch (error) {
+      console.error("API Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const metrics = [
     {
@@ -92,54 +131,10 @@ export default function DashboardPage() {
     ? metrics.find(m => m.id === activeSection)?.component
     : null
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 w-full overflow-x-hidden">
-      {/* Compact Header Stats
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-              <FiAlertCircle className="text-orange-600" size={14} />
-            </div>
-            <Badge className="bg-orange-500 h-4 sm:h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px]">Urgent</Badge>
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">12</div>
-          <div className="text-[10px] sm:text-xs text-gray-600">Critical Actions</div>
-        </div>
-
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-              <FiPackage className="text-blue-600" size={14} />
-            </div>
-            <Badge className="bg-blue-500 h-4 sm:h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px]">Active</Badge>
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">28</div>
-          <div className="text-[10px] sm:text-xs text-gray-600">Orders Running</div>
-        </div>
-
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 flex items-center justify-center">
-              <FiClock className="text-red-600" size={14} />
-            </div>
-            <Badge className="bg-red-500 h-4 sm:h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px]">Delayed</Badge>
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">5</div>
-          <div className="text-[10px] sm:text-xs text-gray-600">Behind Schedule</div>
-        </div>
-
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-green-100 flex items-center justify-center">
-              <FiTrendingUp className="text-green-600" size={14} />
-            </div>
-            <Badge className="bg-green-500 h-4 sm:h-5 px-1.5 sm:px-2 text-[9px] sm:text-[10px]">Growth</Badge>
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">₹67L</div>
-          <div className="text-[10px] sm:text-xs text-gray-600">Monthly Sales</div>
-        </div>
-      </div> */}
 
       {/* Main Metric Cards - Modern Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 pt-4 sm:pt-6 px-2 sm:px-4">
@@ -189,9 +184,8 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <h3 className="text-xs sm:text-sm font-bold text-gray-900">{metric.title}</h3>
                       <FiArrowRight
-                        className={`text-gray-400 transition-transform duration-300 ${
-                          isActive ? 'rotate-90' : 'group-hover:translate-x-1'
-                        }`}
+                        className={`text-gray-400 transition-transform duration-300 ${isActive ? 'rotate-90' : 'group-hover:translate-x-1'
+                          }`}
                         size={14}
                       />
                     </div>
@@ -240,6 +234,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+
+    
+
       {/* Help Text */}
       {!activeSection && (
         <div className="text-center py-8 sm:py-12">
@@ -249,6 +246,26 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* <div>
+        <button onClick={()=>{
+          fetchData("Ledger","GetAllLedgers")
+        }}
+        >Fetch Ledger</button>
+
+        {loading && <p>Loading...</p>}
+
+        {data && (
+          <pre className="bg-gray-100 p-4 mt-4 rounded">
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        )}
+      </div> */}
+
     </div>
+
+
+
+
   )
 }

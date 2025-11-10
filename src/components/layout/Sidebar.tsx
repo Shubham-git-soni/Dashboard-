@@ -69,7 +69,7 @@ export default function Sidebar({ className, isCollapsed, onToggle }: SidebarPro
             isCollapsed ? "lg:h-0 lg:opacity-0" : "h-auto opacity-100"
           )}>
             <div className="p-3 space-y-2.5">
-              <div>
+              {/* <div>
                 <label className="text-[10px] font-semibold text-gray-600 mb-1 block uppercase tracking-wider">Year</label>
                 <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="text-xs h-8">
                   <option value="2024">2024</option>
@@ -85,7 +85,7 @@ export default function Sidebar({ className, isCollapsed, onToggle }: SidebarPro
                   <option value="pithampur">Pithampur</option>
                   <option value="pan-india">Pan-India</option>
                 </Select>
-              </div>
+              </div> */}
             </div>
           </div>
 
