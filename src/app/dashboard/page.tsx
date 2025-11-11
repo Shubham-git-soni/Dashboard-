@@ -29,11 +29,77 @@ export default function DashboardPage() {
   const [subHeader, setSubHeader] = useState("");
   const [data, setData] = useState<any>(null); // store API data
   const [loading, setLoading] = useState(false);
+  const [approvalsCount, setApprovalsCount] = useState(0);
 
 
   const username = process.env.NEXT_PUBLIC_API_USERNAME!;
   const password = process.env.NEXT_PUBLIC_API_PASSWORD!;
   const token = btoa(`${username}:${password}`); // Base64 encoding
+
+  // Fetch Approvals Count
+  useEffect(() => {
+    const fetchApprovalsCount = async () => {
+      try {
+        const toDate = new Date()
+        const fromDate = new Date()
+        fromDate.setDate(fromDate.getDate() - 30)
+
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+          'FromDate': fromDate.toISOString().split('T')[0],
+          'ToDate': toDate.toISOString().split('T')[0],
+        }
+
+        // Fetch all approval counts in parallel
+        const [internalRes, invoiceRes, priceRes, poRes, purchaseReqRes, paperReqRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/InternalApprovals`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/InvoiceApprovals`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PriceApprovals`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/POApprovals`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PurchaseRequisitions`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PaperRequirements`, { method: 'GET', headers })
+        ])
+
+        let totalCount = 15 // Critical Stock Items (static)
+
+        if (internalRes.ok) {
+          const data = await internalRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+        if (invoiceRes.ok) {
+          const data = await invoiceRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+        if (priceRes.ok) {
+          const data = await priceRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+        if (poRes.ok) {
+          const data = await poRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+        if (purchaseReqRes.ok) {
+          const data = await purchaseReqRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+        if (paperReqRes.ok) {
+          const data = await paperReqRes.json()
+          totalCount += Array.isArray(data) ? data.length : 0
+        }
+
+        setApprovalsCount(totalCount)
+        console.log('✅ Total Approvals Count:', totalCount)
+      } catch (error) {
+        console.error('Failed to fetch approvals count:', error)
+      }
+    }
+
+    fetchApprovalsCount()
+  }, [token])
 
   const fetchData = async (mainHeader: string, subHeader: string) => {
     try {
@@ -69,7 +135,7 @@ export default function DashboardPage() {
     {
       id: 'approvals',
       title: 'Approvals',
-      value: '73',
+      value: approvalsCount.toString(),
       subtitle: 'Pending actions',
       change: '+8 today',
       icon: FiCheckSquare,

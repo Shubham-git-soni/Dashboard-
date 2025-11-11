@@ -95,15 +95,126 @@ export default function BusinessHealthSection() {
     fetchRegionSales()
   }, [])
 
-  // Sales Trend Data
-  const salesTrendData = [
-    { month: 'Jan', current: 45, past: 38 },
-    { month: 'Feb', current: 52, past: 42 },
-    { month: 'Mar', current: 48, past: 45 },
-    { month: 'Apr', current: 61, past: 48 },
-    { month: 'May', current: 55, past: 52 },
-    { month: 'Jun', current: 67, past: 55 }
-  ]
+  // Fetch Sales Trend Data
+  useEffect(() => {
+    const fetchSalesTrend = async () => {
+      try {
+        setSalesTrendLoading(true)
+
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        // Calculate date range (current year)
+        const toDate = new Date()
+        const fromDate = new Date(toDate.getFullYear(), 0, 1) // January 1st of current year
+
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+          'FromDate': fromDate.toISOString().split('T')[0],
+          'ToDate': toDate.toISOString().split('T')[0],
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}BusinessHealth/SalesTrend`,
+          { method: 'GET', headers }
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Sales Trend - Count:', Array.isArray(data) ? data.length : 0)
+          console.log('📊 Sales Trend - Data:', data)
+
+          // Map API data to chart format
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedData = data.map((item: any) => ({
+              month: item.MonthName ? item.MonthName.substring(0, 3) : 'N/A', // "November" → "Nov"
+              monthFull: item.MonthName || 'N/A',
+              current: item.CurrentYearSales || 0,
+              past: item.PreviousYearSales || 0,
+              difference: item.Difference || 0,
+              growthPercent: parseFloat(item.GrowthPercent?.toFixed(1)) || 0
+            }))
+            setSalesTrendData(mappedData)
+          }
+        } else {
+          console.error('❌ Sales Trend Error:', response.status, response.statusText)
+        }
+      } catch (error) {
+        console.error('Failed to fetch sales trend:', error)
+      } finally {
+        setSalesTrendLoading(false)
+      }
+    }
+
+    fetchSalesTrend()
+  }, [])
+
+  // Fetch Top-Selling Products Data
+  useEffect(() => {
+    const fetchTopProducts = async () => {
+      try {
+        setProductsLoading(true)
+
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        // Calculate date range (current year)
+        const toDate = new Date()
+        const fromDate = new Date(toDate.getFullYear(), 0, 1) // January 1st of current year
+
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+          'FromDate': fromDate.toISOString().split('T')[0],
+          'ToDate': toDate.toISOString().split('T')[0],
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}BusinessHealth/TopSellingProducts`,
+          { method: 'GET', headers }
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Top Products - Count:', Array.isArray(data) ? data.length : 0)
+          console.log('📊 Top Products - Data:', data)
+
+          // Map API data to chart format
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedData = data.map((item: any) => ({
+              product: item.CategoryName || 'N/A',
+              sales: item.TotalSales || 0,
+              totalSales: item.TotalSales || 0,
+              quantity: item.TotalQuantity || 0,
+              sharePercent: parseFloat(item.SalesSharePercent?.toFixed(1)) || 0
+            }))
+            setTopProductsData(mappedData)
+          }
+        } else {
+          console.error('❌ Top Products Error:', response.status, response.statusText)
+        }
+      } catch (error) {
+        console.error('Failed to fetch top products:', error)
+      } finally {
+        setProductsLoading(false)
+      }
+    }
+
+    fetchTopProducts()
+  }, [])
+
+  // Sales Trend Data (Dynamic)
+  const [salesTrendData, setSalesTrendData] = useState<any[]>([])
+  const [salesTrendLoading, setSalesTrendLoading] = useState(false)
 
   // Quotations Data
   const quotationsData = [
@@ -122,14 +233,15 @@ export default function BusinessHealthSection() {
     { name: 'Inactive', value: 10, color: '#ef4444' }
   ]
 
-  // Top Selling Products
-  const topProductsData = [
-    { product: 'Brochures', sales: 85, value: 12.5 },
-    { product: 'Packaging', sales: 72, value: 18.2 },
-    { product: 'Labels', sales: 68, value: 8.5 },
-    { product: 'Catalogs', sales: 55, value: 15.8 },
-    { product: 'Business Cards', sales: 45, value: 5.2 }
-  ]
+  // Top Selling Products (Dynamic)
+  const [topProductsData, setTopProductsData] = useState<{
+    product: string
+    sales: number
+    totalSales: number
+    quantity: number
+    sharePercent: number
+  }[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
 
   // Region-wise Sales (Dynamic)
   const [regionSalesData, setRegionSalesData] = useState<{
@@ -139,12 +251,7 @@ export default function BusinessHealthSection() {
     previousSales: number
     growth: number
     difference: number
-  }[]>([
-    { region: 'Indore', country: 'India', sales: 45, previousSales: 38, growth: 12, difference: 7 },
-    { region: 'Pithampur', country: 'India', sales: 35, previousSales: 30, growth: 8, difference: 5 },
-    { region: 'Pan-India', country: 'India', sales: 65, previousSales: 55, growth: 15, difference: 10 },
-    { region: 'Others', country: 'India', sales: 25, previousSales: 23, growth: 5, difference: 2 }
-  ])
+  }[]>([])
   const [regionLoading, setRegionLoading] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<string>('all')
 
@@ -238,7 +345,7 @@ export default function BusinessHealthSection() {
           <p className="text-[10px] sm:text-xs lg:text-sm text-gray-600 mt-0.5 sm:mt-1">Comprehensive business metrics and performance analytics</p>
         </div>
         <Select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="w-full sm:w-auto text-xs sm:text-sm">
-          <option value="week">This Week</option>
+        
           <option value="month">This Month</option>
           <option value="quarter">This Quarter</option>
           <option value="year">This Year</option>
@@ -272,32 +379,43 @@ export default function BusinessHealthSection() {
             <CardTitle className="text-xs sm:text-sm lg:text-base">Sales Trend (Current vs Past)</CardTitle>
           </CardHeader>
           <CardContent className="pb-2 sm:pb-3 lg:pb-4">
-            <div className="h-[160px] sm:h-[200px] lg:h-[260px] -mx-2 sm:mx-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesTrendData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                    width={35}
-                  />
-                  <Tooltip
-                    contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
-                    iconSize={10}
-                  />
-                  <Line type="monotone" dataKey="current" stroke="#3b82f6" strokeWidth={2} name="Current" dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="past" stroke="#94a3b8" strokeWidth={2} name="Past" dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {salesTrendLoading ? (
+              <div className="flex items-center justify-center h-[160px] sm:h-[200px] lg:h-[260px]">
+                <p className="text-sm text-gray-500">Loading sales trend data...</p>
+              </div>
+            ) : salesTrendData.length === 0 ? (
+              <div className="flex items-center justify-center h-[160px] sm:h-[200px] lg:h-[260px]">
+                <p className="text-sm text-gray-500">No sales trend data available</p>
+              </div>
+            ) : (
+              <div className="h-[160px] sm:h-[200px] lg:h-[260px] -mx-2 sm:mx-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesTrendData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                      width={35}
+                    />
+                    <Tooltip
+                      contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
+                      iconSize={10}
+                    />
+                    <Line type="monotone" dataKey="current" stroke="#3b82f6" strokeWidth={2} name="Current" dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="past" stroke="#94a3b8" strokeWidth={2} name="Past" dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="growthPercent" stroke="#10b981" strokeWidth={2} name="Growth %" dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -383,34 +501,44 @@ export default function BusinessHealthSection() {
             <CardTitle className="text-xs sm:text-sm lg:text-base">Top-Selling Products</CardTitle>
           </CardHeader>
           <CardContent className="pb-2 sm:pb-3 lg:pb-4">
-            <div className="h-[200px] sm:h-[240px] lg:h-[280px] -mx-2 sm:mx-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topProductsData} layout="horizontal" margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                  />
-                  <YAxis
-                    dataKey="product"
-                    type="category"
-                    width={70}
-                    tick={{ fontSize: 8 }}
-                    tickMargin={5}
-                  />
-                  <Tooltip
-                    contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
-                    cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
-                    iconSize={10}
-                  />
-                  <Bar dataKey="sales" fill="#8b5cf6" name="Sales Qty" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {productsLoading ? (
+              <div className="flex items-center justify-center h-[200px] sm:h-[240px] lg:h-[280px]">
+                <p className="text-sm text-gray-500">Loading products data...</p>
+              </div>
+            ) : topProductsData.length === 0 ? (
+              <div className="flex items-center justify-center h-[200px] sm:h-[240px] lg:h-[280px]">
+                <p className="text-sm text-gray-500">No products data available</p>
+              </div>
+            ) : (
+              <div className="h-[200px] sm:h-[240px] lg:h-[280px] -mx-2 sm:mx-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topProductsData} layout="horizontal" margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                    />
+                    <YAxis
+                      dataKey="product"
+                      type="category"
+                      width={70}
+                      tick={{ fontSize: 8 }}
+                      tickMargin={5}
+                    />
+                    <Tooltip
+                      contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
+                      cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
+                      iconSize={10}
+                    />
+                    <Bar dataKey="sales" fill="#8b5cf6" name="Total Sales" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -442,50 +570,55 @@ export default function BusinessHealthSection() {
           </div>
         </CardHeader>
         <CardContent className="pb-2 sm:pb-3 lg:pb-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            <div className="h-[160px] sm:h-[200px] lg:h-[240px] -mx-2 sm:mx-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={filteredRegionData} margin={{ top: 5, right: 25, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="region"
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    orientation="left"
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                    width={30}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
-                    width={30}
-                  />
-                  <Tooltip
-                    contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
-                    cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: '9px', paddingTop: '5px' }}
-                    iconSize={8}
-                  />
-                  <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Sales (₹L)" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="growth" fill="#10b981" name="Growth %" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+          {regionLoading ? (
+            <div className="flex items-center justify-center h-[240px]">
+              <p className="text-sm text-gray-500">Loading region sales data...</p>
             </div>
+          ) : regionSalesData.length === 0 ? (
+            <div className="flex items-center justify-center h-[240px]">
+              <p className="text-sm text-gray-500">No region sales data available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+              <div className="h-[160px] sm:h-[200px] lg:h-[240px] -mx-2 sm:mx-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={filteredRegionData} margin={{ top: 5, right: 25, left: -15, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="region"
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      orientation="left"
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                      width={30}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 9 }}
+                      tickMargin={5}
+                      width={30}
+                    />
+                    <Tooltip
+                      contentStyle={{ fontSize: '10px', padding: '4px 8px' }}
+                      cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: '9px', paddingTop: '5px' }}
+                      iconSize={8}
+                    />
+                    <Bar yAxisId="left" dataKey="sales" fill="#3b82f6" name="Current Sales (₹L)" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="previousSales" fill="#94a3b8" name="Previous Sales (₹L)" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="growth" fill="#10b981" name="Growth %" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
 
-            <div>
-              {regionLoading ? (
-                <div className="flex items-center justify-center h-[200px]">
-                  <p className="text-sm text-gray-500">Loading region data...</p>
-                </div>
-              ) : (
+              <div>
                 <div className="max-h-[240px] overflow-y-auto scrollbar-thin">
                   <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
@@ -520,9 +653,9 @@ export default function BusinessHealthSection() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

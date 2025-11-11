@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -116,11 +116,11 @@ interface PendingItemsTableProps {
 }
 
 function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, data, columns }: PendingItemsTableProps) {
-  const [searchTerm, setSearchTerm] = React.useState('')
-  const [statusFilter, setStatusFilter] = React.useState<'all' | 'on-time' | 'delayed'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'on-time' | 'delayed'>('all')
 
   // Filter data based on search and status
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     return data.filter((item) => {
       // Search filter
       const searchMatch = Object.values(item).some((val) =>
@@ -220,7 +220,7 @@ function PendingItemsTable({ title, icon: Icon, color, bgColor, count, value, da
             {/* Desktop Table View with Scrollbar */}
             <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
               <table className="w-full">
-                <thead>
+                <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-50 border-b border-gray-200">
                     {columns.map((col) => (
                       <th key={col.key} className="text-left py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
@@ -296,12 +296,12 @@ export default function DailyUpdateSection() {
   const chartConfig = getChartConfig(isMobile, isTablet)
 
   // State for dynamic data
-  const [salesPOsData, setSalesPOsData] = React.useState(pendingSalesPOs)
-  const [deliveriesData, setDeliveriesData] = React.useState(pendingDeliveries)
-  const [loading, setLoading] = React.useState(false)
+  const [salesPOsData, setSalesPOsData] = useState<any[]>([])
+  const [deliveriesData, setDeliveriesData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
   // Calculate chart data dynamically
-  const salesPOChartData = React.useMemo(() => {
+  const salesPOChartData = useMemo(() => {
     const onTimeCount = salesPOsData.filter(item => item.status === 'on-time').length
     const delayedCount = salesPOsData.filter(item => item.status === 'delayed').length
 
@@ -319,7 +319,7 @@ export default function DailyUpdateSection() {
     ]
   }, [salesPOsData])
 
-  const deliveryChartData = React.useMemo(() => {
+  const deliveryChartData = useMemo(() => {
     const onTimeCount = deliveriesData.filter(item => item.status === 'on-time').length
     const delayedCount = deliveriesData.filter(item => item.status === 'delayed').length
     const totalCount = deliveriesData.length
@@ -340,7 +340,7 @@ export default function DailyUpdateSection() {
   }, [deliveriesData])
 
   // Fetch Pending Sales Orders and Deliveries
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDailyUpdates = async () => {
       try {
         setLoading(true)
@@ -358,7 +358,7 @@ export default function DailyUpdateSection() {
           'Authorization': `Basic ${token}`,
           'Content-Type': 'application/json',
           'CompanyID': '2',
-          'UserID': '2',
+          'UserID': '2', 
           'FYEAR': '2025-2026',
           'FromDate': fromDate.toISOString().split('T')[0], // YYYY-MM-DD format
           'ToDate': toDate.toISOString().split('T')[0], // YYYY-MM-DD format
@@ -442,13 +442,13 @@ export default function DailyUpdateSection() {
             setSalesPOsData(mappedData)
           }
         } else {
-          console.error('❌ Pending Sales Orders Error:', salesPOsResponse.status, salesPOsResponse.statusText)
+          console.error(' Pending Sales Orders Error:', salesPOsResponse.status, salesPOsResponse.statusText)
         }
 
         if (deliveriesResponse.ok) {
           deliveriesApiData = await deliveriesResponse.json()
-          console.log('✅ Pending Deliveries - Count:', Array.isArray(deliveriesApiData) ? deliveriesApiData.length : 0)
-          console.log('📊 Pending Deliveries - Data:', deliveriesApiData)
+          console.log(' Pending Deliveries - Count:', Array.isArray(deliveriesApiData) ? deliveriesApiData.length : 0)
+          console.log(' Pending Deliveries - Data:', deliveriesApiData)
 
           // Map API data to component format
           if (Array.isArray(deliveriesApiData) && deliveriesApiData.length > 0) {
@@ -467,6 +467,7 @@ export default function DailyUpdateSection() {
                 client: item.ClientName || 'N/A',
                 jobName: item.JobName || 'N/A',
                 value: `₹${item.NetAmount?.toLocaleString('en-IN') || '0'}`,
+                deliverydate: item.DeliveryDate || 'Pending',
                 scheduled: item.ExpectedDeliveryDate || item.DeliveryDate || 'N/A',
                 delay: delayDays,
                 status: item.DeliveryStatus === 'Delay' ? 'delayed' : 'on-time'
@@ -475,7 +476,7 @@ export default function DailyUpdateSection() {
             setDeliveriesData(mappedData)
           }
         } else {
-          console.error('❌ Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
+          console.error(' Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
         }
       } catch (error) {
         console.error('Failed to fetch daily updates:', error)
@@ -629,38 +630,48 @@ export default function DailyUpdateSection() {
             </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
-            <ResponsiveChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={salesPOChartData} margin={chartConfig.margin}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: chartConfig.fontSize }}
-                    tickMargin={chartConfig.tickMargin}
-                  />
-                  <YAxis
-                    tick={{ fontSize: chartConfig.fontSize }}
-                    tickMargin={chartConfig.tickMargin}
-                    width={chartConfig.yAxisWidth}
-                  />
-                  <Tooltip
-                    contentStyle={chartConfig.tooltipStyle}
-                    cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                    formatter={(value: any, name: string) => {
-                      if (name === 'Count') return [value, 'Orders']
-                      if (name === 'Value') return [`₹${value}L`, 'Value']
-                      return [value, name]
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={chartConfig.legendStyle}
-                    iconSize={chartConfig.iconSize}
-                  />
-                  <Bar dataKey="count" fill="#3b82f6" name="Count" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="value" fill="#10b981" name="Value (₹L)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ResponsiveChartWrapper>
+            {loading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-sm text-gray-500">Loading Sales POs data...</p>
+              </div>
+            ) : salesPOsData.length === 0 ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-sm text-gray-500">No Sales POs data available</p>
+              </div>
+            ) : (
+              <ResponsiveChartWrapper>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={salesPOChartData} margin={chartConfig.margin}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: chartConfig.fontSize }}
+                      tickMargin={chartConfig.tickMargin}
+                    />
+                    <YAxis
+                      tick={{ fontSize: chartConfig.fontSize }}
+                      tickMargin={chartConfig.tickMargin}
+                      width={chartConfig.yAxisWidth}
+                    />
+                    <Tooltip
+                      contentStyle={chartConfig.tooltipStyle}
+                      cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'Count') return [value, 'Orders']
+                        if (name === 'Value') return [`₹${value}L`, 'Value']
+                        return [value, name]
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={chartConfig.legendStyle}
+                      iconSize={chartConfig.iconSize}
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" name="Count" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#10b981" name="Value (₹L)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ResponsiveChartWrapper>
+            )}
           </CardContent>
         </Card>
 
@@ -674,38 +685,48 @@ export default function DailyUpdateSection() {
             </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
-            <ResponsiveChartWrapper>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={deliveryChartData} margin={chartConfig.margin}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: chartConfig.fontSize }}
-                    tickMargin={chartConfig.tickMargin}
-                  />
-                  <YAxis
-                    tick={{ fontSize: chartConfig.fontSize }}
-                    tickMargin={chartConfig.tickMargin}
-                    width={chartConfig.yAxisWidth}
-                  />
-                  <Tooltip
-                    contentStyle={chartConfig.tooltipStyle}
-                    cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
-                    formatter={(value: any, name: string) => {
-                      if (name === 'Count') return [value, 'Deliveries']
-                      if (name === 'Value (₹L)') return [`₹${value}L`, 'Value']
-                      return [value, name]
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={chartConfig.legendStyle}
-                    iconSize={chartConfig.iconSize}
-                  />
-                  <Bar dataKey="count" fill="#8b5cf6" name="Count" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="value" fill="#f59e0b" name="Value (₹L)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ResponsiveChartWrapper>
+            {loading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-sm text-gray-500">Loading Deliveries data...</p>
+              </div>
+            ) : deliveriesData.length === 0 ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <p className="text-sm text-gray-500">No Deliveries data available</p>
+              </div>
+            ) : (
+              <ResponsiveChartWrapper>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={deliveryChartData} margin={chartConfig.margin}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: chartConfig.fontSize }}
+                      tickMargin={chartConfig.tickMargin}
+                    />
+                    <YAxis
+                      tick={{ fontSize: chartConfig.fontSize }}
+                      tickMargin={chartConfig.tickMargin}
+                      width={chartConfig.yAxisWidth}
+                    />
+                    <Tooltip
+                      contentStyle={chartConfig.tooltipStyle}
+                      cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'Count') return [value, 'Deliveries']
+                        if (name === 'Value (₹L)') return [`₹${value}L`, 'Value']
+                        return [value, name]
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={chartConfig.legendStyle}
+                      iconSize={chartConfig.iconSize}
+                    />
+                    <Bar dataKey="count" fill="#8b5cf6" name="Count" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#f59e0b" name="Value (₹L)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ResponsiveChartWrapper>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -744,6 +765,7 @@ export default function DailyUpdateSection() {
           { key: 'client', label: 'Client' },
           { key: 'jobName', label: 'Job Name' },
           { key: 'value', label: 'Value' },
+          { key: 'deliverydate', label: 'Delivery Date' },
           { key: 'scheduled', label: 'Expected Delivery' },
           { key: 'status', label: 'Status' }
         ]}
