@@ -431,7 +431,7 @@ export default function ApprovalsSection() {
 
                 {/* Compact Item List */}
                 <div className="p-1.5 sm:p-2 bg-white space-y-1">
-                  {approval.items.slice(0, 3).map((item: ApprovalItem, idx: number) => (
+                  {approval.items.slice(0,3).map((item: ApprovalItem, idx: number) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors group/item"

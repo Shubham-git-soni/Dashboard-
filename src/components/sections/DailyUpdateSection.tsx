@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -97,12 +97,7 @@ const pendingPurchasePOs = [
   { poNumber: 'PO-2024-154', vendor: 'Equipment Co', value: '₹95,000', dueDate: '2024-01-22', delay: 0, status: 'on-time' }
 ]
 
-// Pending GRN
-const pendingGRN = [
-  { grnNo: 'GRN-2024-245', vendor: 'Paper Suppliers Inc', value: '₹4,50,000', poNumber: 'PO-2024-145', delay: 3, status: 'delayed' },
-  { grnNo: 'GRN-2024-244', vendor: 'Ink Vendors Ltd', value: '₹1,85,000', poNumber: 'PO-2024-144', delay: 0, status: 'on-time' },
-  { grnNo: 'GRN-2024-243', vendor: 'Die Makers', value: '₹75,000', poNumber: 'PO-2024-143', delay: 1, status: 'delayed' }
-]
+// Pending GRN - Removed dummy data, now using dynamic data from API
 
 interface PendingItemsTableProps {
   title: string
@@ -298,7 +293,59 @@ export default function DailyUpdateSection() {
   // State for dynamic data
   const [salesPOsData, setSalesPOsData] = useState<any[]>([])
   const [deliveriesData, setDeliveriesData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [purchasePOsData, setPurchasePOsData] = useState<any[]>([])
+  const [pendingGRNData, setPendingGRNData] = useState<any[]>([])
+
+  // Individual loading states for better UX
+  const [salesDeliveriesLoading, setSalesDeliveriesLoading] = useState(false)
+  const [purchasePOsLoading, setPurchasePOsLoading] = useState(false)
+  const [grnLoading, setGRNLoading] = useState(false)
+
+  // Separate date range states for sections that need date filtering
+  const [purchasePODates, setPurchasePODates] = useState({ from: '2025-04-01', to: '2025-11-11' })
+  const [grnDates, setGRNDates] = useState({ from: '2025-04-01', to: '2025-11-11' })
+
+  // Debounced date states for API calls (to prevent too many API calls)
+  const [debouncedPurchasePODates, setDebouncedPurchasePODates] = useState({ from: '2025-04-01', to: '2025-11-11' })
+  const [debouncedGRNDates, setDebouncedGRNDates] = useState({ from: '2025-04-01', to: '2025-11-11' })
+
+  // Debounce timers
+  const purchasePODebounceRef = useRef<NodeJS.Timeout>()
+  const grnDebounceRef = useRef<NodeJS.Timeout>()
+
+  // Debounce Purchase PO dates
+  useEffect(() => {
+    if (purchasePODebounceRef.current) {
+      clearTimeout(purchasePODebounceRef.current)
+    }
+
+    purchasePODebounceRef.current = setTimeout(() => {
+      setDebouncedPurchasePODates(purchasePODates)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => {
+      if (purchasePODebounceRef.current) {
+        clearTimeout(purchasePODebounceRef.current)
+      }
+    }
+  }, [purchasePODates.from, purchasePODates.to])
+
+  // Debounce GRN dates
+  useEffect(() => {
+    if (grnDebounceRef.current) {
+      clearTimeout(grnDebounceRef.current)
+    }
+
+    grnDebounceRef.current = setTimeout(() => {
+      setDebouncedGRNDates(grnDates)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => {
+      if (grnDebounceRef.current) {
+        clearTimeout(grnDebounceRef.current)
+      }
+    }
+  }, [grnDates.from, grnDates.to])
 
   // Calculate chart data dynamically
   const salesPOChartData = useMemo(() => {
@@ -339,29 +386,22 @@ export default function DailyUpdateSection() {
     ]
   }, [deliveriesData])
 
-  // Fetch Pending Sales Orders and Deliveries
+  // Fetch Pending Sales Orders and Deliveries (No date filter required)
   useEffect(() => {
-    const fetchDailyUpdates = async () => {
+    const fetchSalesAndDeliveries = async () => {
       try {
-        setLoading(true)
+        setSalesDeliveriesLoading(true)
 
         const username = process.env.NEXT_PUBLIC_API_USERNAME!
         const password = process.env.NEXT_PUBLIC_API_PASSWORD!
         const token = btoa(`${username}:${password}`)
 
-        // Calculate date range (last 30 days)
-        const toDate = new Date()
-        const fromDate = new Date()
-        fromDate.setDate(fromDate.getDate() - 30)
-
         const headers = {
           'Authorization': `Basic ${token}`,
           'Content-Type': 'application/json',
           'CompanyID': '2',
-          'UserID': '2', 
+          'UserID': '2',
           'FYEAR': '2025-2026',
-          'FromDate': fromDate.toISOString().split('T')[0], // YYYY-MM-DD format
-          'ToDate': toDate.toISOString().split('T')[0], // YYYY-MM-DD format
         }
 
         // Fetch Pending Sales Orders
@@ -479,20 +519,179 @@ export default function DailyUpdateSection() {
           console.error(' Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
         }
       } catch (error) {
-        console.error('Failed to fetch daily updates:', error)
+        console.error('Failed to fetch sales and deliveries:', error)
       } finally {
-        setLoading(false)
+        setSalesDeliveriesLoading(false)
       }
     }
 
-    fetchDailyUpdates()
-  }, [])
+    fetchSalesAndDeliveries()
+  }, []) // Run once on mount - no date filter
+
+  // Fetch Pending Purchase POs (with date filter)
+  useEffect(() => {
+    const fetchPurchasePOs = async () => {
+      try {
+        setPurchasePOsLoading(true)
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        const headers: Record<string, string> = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+        }
+
+        // Only add date headers if dates are provided (for filtering)
+        if (debouncedPurchasePODates.from && debouncedPurchasePODates.to) {
+          headers['FromDate'] = debouncedPurchasePODates.from
+          headers['ToDate'] = debouncedPurchasePODates.to
+          console.log('🔍 Fetching Purchase POs with date filter:', debouncedPurchasePODates)
+        } else {
+          console.log('🔍 Fetching ALL Purchase POs (no date filter)')
+        }
+        const purchasePOsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingPurchasePOs`,
+          { method: 'GET', headers }
+        )
+
+        if (purchasePOsResponse.ok) {
+          const responseText = await purchasePOsResponse.text()
+          let purchasePOsApiData
+          try {
+            purchasePOsApiData = JSON.parse(responseText)
+          } catch (e) {
+            console.error('❌ Failed to parse Purchase POs JSON:', e)
+            purchasePOsApiData = []
+          }
+
+          if (Array.isArray(purchasePOsApiData)) {
+            const mappedData = purchasePOsApiData.map((item: any) => {
+              let delayDays = 0
+              let calculatedStatus = 'on-time'
+
+              if (item.Status && item.Status.toLowerCase().includes('delay')) {
+                const match = item.Status.match(/\d+/)
+                if (match) {
+                  delayDays = parseInt(match[0])
+                  calculatedStatus = 'delayed'
+                }
+              } else if (item.Status && item.Status.toLowerCase() === 'pending') {
+                calculatedStatus = 'pending'
+              }
+
+              return {
+                transactionId: item.POTransactionID || 'N/A',
+                vendor: item.LedgerName || 'N/A',
+                poNumber: item.PurchaseVoucherNo_PO || 'N/A',
+                expectedDate: item.ExpectedDeliveryDate || 'N/A',
+                receiptDate: item.ReceiptDate || 'Pending',
+                delay: delayDays,
+                status: calculatedStatus
+              }
+            })
+            setPurchasePOsData(mappedData)
+          } else {
+            setPurchasePOsData([])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch Purchase POs:', error)
+      } finally {
+        setPurchasePOsLoading(false)
+      }
+    }
+
+    fetchPurchasePOs()
+  }, [debouncedPurchasePODates.from, debouncedPurchasePODates.to])
+
+  // Fetch Pending GRN (with date filter)
+  useEffect(() => {
+    const fetchPendingGRN = async () => {
+      try {
+        setGRNLoading(true)
+        const username = process.env.NEXT_PUBLIC_API_USERNAME!
+        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
+        const token = btoa(`${username}:${password}`)
+
+        const headers: Record<string, string> = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+        }
+
+        // Only add date headers if dates are provided (for filtering)
+        if (debouncedGRNDates.from && debouncedGRNDates.to) {
+          headers['FromDate'] = debouncedGRNDates.from
+          headers['ToDate'] = debouncedGRNDates.to
+          console.log('🔍 Fetching Pending GRN with date filter:', debouncedGRNDates)
+        } else {
+          console.log('🔍 Fetching ALL Pending GRN (no date filter)')
+        }
+        const pendingGRNResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingGRN`,
+          { method: 'GET', headers }
+        )
+
+        if (pendingGRNResponse.ok) {
+          const responseText = await pendingGRNResponse.text()
+          let pendingGRNApiData
+          try {
+            pendingGRNApiData = JSON.parse(responseText)
+          } catch (e) {
+            console.error('❌ Failed to parse Pending GRN JSON:', e)
+            pendingGRNApiData = []
+          }
+
+          if (Array.isArray(pendingGRNApiData)) {
+            const mappedData = pendingGRNApiData.map((item: any) => {
+              let delayDays = item.DaysDifference || 0
+              let calculatedStatus = 'on-time'
+
+              if (item.Status && item.Status.toLowerCase().includes('delay')) {
+                calculatedStatus = 'delayed'
+              } else if (item.Status && item.Status.toLowerCase() === 'ontime') {
+                calculatedStatus = 'on-time'
+              }
+
+              return {
+                grnTransactionId: item.GRNTransactionID || 'N/A',
+                grnVoucherNo: item.GRNVoucherNo || 'N/A',
+                grnVoucherDate: item.GRNVoucherDate || 'N/A',
+                purchaseVoucherNo: item.PurchaseVoucherNo || 'N/A',
+                purchaseVoucherDate: item.PurchaseVoucherDate || 'N/A',
+                expectedDeliveryDate: item.ExpectedDeliveryDate || 'N/A',
+                status: item.Status || 'N/A',
+                delay: delayDays
+              }
+            })
+            setPendingGRNData(mappedData)
+          } else {
+            setPendingGRNData([])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch Pending GRN:', error)
+      } finally {
+        setGRNLoading(false)
+      }
+    }
+
+    fetchPendingGRN()
+  }, [debouncedGRNDates.from, debouncedGRNDates.to])
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-      <div>
-        <h2 className="text-base sm:text-lg lg:text-2xl font-bold text-gray-900">My Daily Update</h2>
-        <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Current orders, production tracking, and delivery status</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base sm:text-lg lg:text-2xl font-bold text-gray-900">My Daily Update</h2>
+          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Current orders, production tracking, and delivery status</p>
+        </div>
       </div>
 
       {/* Order BOM Check Table */}
@@ -630,7 +829,7 @@ export default function DailyUpdateSection() {
             </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
-            {loading ? (
+            {salesDeliveriesLoading ? (
               <div className="flex items-center justify-center h-[200px]">
                 <p className="text-sm text-gray-500">Loading Sales POs data...</p>
               </div>
@@ -685,7 +884,7 @@ export default function DailyUpdateSection() {
             </div>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 lg:p-6">
-            {loading ? (
+            {salesDeliveriesLoading ? (
               <div className="flex items-center justify-center h-[200px]">
                 <p className="text-sm text-gray-500">Loading Deliveries data...</p>
               </div>
@@ -738,7 +937,7 @@ export default function DailyUpdateSection() {
         color="text-blue-600"
         bgColor="bg-blue-50"
         count={salesPOsData.length}
-        value={loading ? 'Loading...' : `Total Value: ₹${(salesPOsData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
+        value={salesDeliveriesLoading ? 'Loading...' : `Total Value: ₹${(salesPOsData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
         data={salesPOsData}
         columns={[
           { key: 'poNumber', label: 'Sales Order No' },
@@ -758,7 +957,7 @@ export default function DailyUpdateSection() {
         color="text-purple-600"
         bgColor="bg-purple-50"
         count={deliveriesData.length}
-        value={loading ? 'Loading...' : `Total Value: ₹${(deliveriesData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
+        value={salesDeliveriesLoading ? 'Loading...' : `Total Value: ₹${(deliveriesData.reduce((sum, item) => sum + (parseFloat(item.value.replace(/[₹,]/g, '')) || 0), 0) / 100000).toFixed(1)}L`}
         data={deliveriesData}
         columns={[
           { key: 'deliveryNo', label: 'Sales Order No' },
@@ -772,40 +971,144 @@ export default function DailyUpdateSection() {
       />
 
       {/* Pending Purchase POs */}
-      <PendingItemsTable
-        title="Pending Purchase POs"
-        icon={FiShoppingBag}
-        color="text-orange-600"
-        bgColor="bg-orange-50"
-        count={pendingPurchasePOs.length}
-        value="Total Value: ₹9.0L"
-        data={pendingPurchasePOs}
-        columns={[
-          { key: 'poNumber', label: 'PO Number' },
-          { key: 'vendor', label: 'Vendor' },
-          { key: 'value', label: 'Value' },
-          { key: 'dueDate', label: 'Due Date' },
-          { key: 'status', label: 'Status' }
-        ]}
-      />
+      <Card>
+        <CardHeader className="bg-orange-50 border-b p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FiShoppingBag className="text-orange-600" size={18} />
+                <h3 className="text-sm sm:text-base font-bold text-gray-900">Pending Purchase POs</h3>
+                <Badge className="bg-orange-600 text-white text-xs">
+                  {purchasePOsData.length}
+                </Badge>
+                {purchasePOsLoading && (
+                  <div className="flex items-center gap-1 text-xs text-orange-600">
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-600 border-t-transparent"></div>
+                    <span>Loading...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Individual Date Filter for Purchase POs */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700">From:</label>
+                  <input
+                    type="date"
+                    value={purchasePODates.from}
+                    onChange={(e) => setPurchasePODates(prev => ({ ...prev, from: e.target.value }))}
+                    className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700">To:</label>
+                  <input
+                    type="date"
+                    value={purchasePODates.to}
+                    onChange={(e) => setPurchasePODates(prev => ({ ...prev, to: e.target.value }))}
+                    className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <button
+                  onClick={() => setPurchasePODates({ from: '', to: '' })}
+                  className="px-3 py-1.5 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors duration-200 whitespace-nowrap"
+                >
+                  Show All Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <PendingItemsTable
+            title=""
+            icon={FiShoppingBag}
+            color="text-orange-600"
+            bgColor="bg-orange-50"
+            count={purchasePOsData.length}
+            value={`Total: ${purchasePOsData.length} POs`}
+            data={purchasePOsData}
+            columns={[
+              { key: 'transactionId', label: 'Transaction ID' },
+              { key: 'vendor', label: 'Vendor' },
+              { key: 'poNumber', label: 'PO Number' },
+              { key: 'expectedDate', label: 'Expected Date' },
+              { key: 'receiptDate', label: 'Receipt Date' },
+              { key: 'status', label: 'Status' }
+            ]}
+          />
+        </CardContent>
+      </Card>
 
       {/* Pending GRN */}
-      <PendingItemsTable
-        title="Pending GRN (Goods Receipt Note)"
-        icon={FiPackage}
-        color="text-teal-600"
-        bgColor="bg-teal-50"
-        count={pendingGRN.length}
-        value="Total Value: ₹7.1L"
-        data={pendingGRN}
-        columns={[
-          { key: 'grnNo', label: 'GRN No' },
-          { key: 'vendor', label: 'Vendor' },
-          { key: 'value', label: 'Value' },
-          { key: 'poNumber', label: 'PO Number' },
-          { key: 'status', label: 'Status' }
-        ]}
-      />
+      <Card>
+        <CardHeader className="bg-teal-50 border-b p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FiPackage className="text-teal-600" size={18} />
+                <h3 className="text-sm sm:text-base font-bold text-gray-900">Pending GRN (Goods Receipt Note)</h3>
+                <Badge className="bg-teal-600 text-white text-xs">
+                  {pendingGRNData.length}
+                </Badge>
+                {grnLoading && (
+                  <div className="flex items-center gap-1 text-xs text-teal-600">
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-teal-600 border-t-transparent"></div>
+                    <span>Loading...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Individual Date Filter for GRN */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700">From:</label>
+                  <input
+                    type="date"
+                    value={grnDates.from}
+                    onChange={(e) => setGRNDates(prev => ({ ...prev, from: e.target.value }))}
+                    className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700">To:</label>
+                  <input
+                    type="date"
+                    value={grnDates.to}
+                    onChange={(e) => setGRNDates(prev => ({ ...prev, to: e.target.value }))}
+                    className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <button
+                  onClick={() => setGRNDates({ from: '', to: '' })}
+                  className="px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-100 hover:bg-teal-200 rounded-lg transition-colors duration-200 whitespace-nowrap"
+                >
+                  Show All Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <PendingItemsTable
+            title=""
+            icon={FiPackage}
+            color="text-teal-600"
+            bgColor="bg-teal-50"
+            count={pendingGRNData.length}
+            value={`Total: ${pendingGRNData.length} GRNs`}
+            data={pendingGRNData}
+            columns={[
+              { key: 'grnVoucherNo', label: 'GRN Voucher No' },
+              { key: 'grnVoucherDate', label: 'GRN Date' },
+              { key: 'purchaseVoucherNo', label: 'PO Number' },
+              { key: 'purchaseVoucherDate', label: 'PO Date' },
+              { key: 'expectedDeliveryDate', label: 'Expected Date' },
+              { key: 'status', label: 'Status' }
+            ]}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }
