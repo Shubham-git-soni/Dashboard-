@@ -11,16 +11,15 @@ import {
   FiAlertTriangle,
   FiPackage,
   FiArrowRight,
-  FiClock
+  FiClock,
+  FiX
 } from 'react-icons/fi'
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import { IconType } from 'react-icons'
 
 interface ApprovalItem {
   name: string
   amount: string
   date: string
-  urgent: boolean
 }
 
 interface ApprovalData {
@@ -31,7 +30,6 @@ interface ApprovalData {
   color: string
   lightColor: string
   textColor: string
-  trend: number[]
   priority?: string
   value?: string
   items: ApprovalItem[]
@@ -41,94 +39,97 @@ const staticApprovalData: ApprovalData[] = [
   {
     id: 'internal',
     title: 'Internal Approval',
-    count: 0, // Will be updated dynamically
+    count: 0,
     icon: FiCheckCircle,
     color: 'bg-blue-500',
     lightColor: 'bg-blue-50',
     textColor: 'text-blue-600',
-    trend: [5, 8, 6, 9, 8, 7, 8],
     priority: 'high',
-    items: [] // Will be populated from API
+    items: []
   },
   {
     id: 'price',
     title: 'Price Approval',
-    count: 0, // Will be updated dynamically
+    count: 0,
     icon: FiDollarSign,
     color: 'bg-green-500',
     lightColor: 'bg-green-50',
     textColor: 'text-green-600',
-    trend: [3, 5, 7, 6, 8, 7, 6],
-    items: [] // Will be populated from API
+    items: []
   },
   {
     id: 'purchase-req',
     title: 'Purchase Requisition',
-    count: 0, // Will be updated dynamically
+    count: 0,
     icon: FiShoppingCart,
     color: 'bg-purple-500',
     lightColor: 'bg-purple-50',
     textColor: 'text-purple-600',
-    trend: [10, 12, 11, 13, 15, 14, 12],
     priority: 'high',
-    items: [] // Will be populated from API
+    items: []
   },
   {
     id: 'po',
     title: 'PO Approval',
-    count: 0, // Will be updated dynamically
+    count: 0,
     icon: FiFileText,
     color: 'bg-indigo-500',
     lightColor: 'bg-indigo-50',
     textColor: 'text-indigo-600',
-    trend: [4, 5, 6, 5, 6, 7, 5],
-    items: [] // Will be populated from API
+    items: []
   },
   {
     id: 'invoice',
     title: 'Invoice Approval',
-    count: 0, // Will be updated dynamically
+    count: 0,
     icon: FiFileText,
     color: 'bg-teal-500',
     lightColor: 'bg-teal-50',
     textColor: 'text-teal-600',
-    trend: [7, 8, 9, 10, 11, 10, 9],
-    items: [] // Will be populated from API
+    items: []
   },
   {
     id: 'critical-stock',
     title: 'Critical Stock Items',
-    count: 15,
-    value: '₹4.2L',
+    count: 0,
+    value: '₹0',
     icon: FiAlertTriangle,
     color: 'bg-red-500',
     lightColor: 'bg-red-50',
     textColor: 'text-red-600',
-    trend: [12, 15, 14, 16, 18, 17, 15],
     priority: 'high',
-    items: [
-      { name: 'A4 Premium Paper Stock', amount: '₹85,000', date: 'Below Min', urgent: true },
-      { name: 'Cyan Printing Ink', amount: '₹35,000', date: 'Below Min', urgent: true },
-      { name: 'Lamination Film (Glossy)', amount: '₹55,000', date: 'Below Min', urgent: true }
-    ]
+    items: []
   },
   {
     id: 'paper-req',
     title: 'Paper Requirements',
-    count: 0, // Will be updated dynamically
+    count: 0,
     value: '₹0',
     icon: FiPackage,
     color: 'bg-yellow-500',
     lightColor: 'bg-yellow-50',
     textColor: 'text-yellow-600',
-    trend: [20, 22, 21, 23, 25, 24, 18],
-    items: [] // Will be populated from API
+    items: []
   }
 ]
 
 export default function ApprovalsSection() {
   const [approvalData, setApprovalData] = useState<ApprovalData[]>(staticApprovalData)
   const [loading, setLoading] = useState<boolean>(false)
+  const [modalOpen, setModalOpen] = useState<boolean>(false)
+  const [selectedApproval, setSelectedApproval] = useState<ApprovalData | null>(null)
+
+  // Open modal with selected approval data
+  const openModal = (approval: ApprovalData) => {
+    setSelectedApproval(approval)
+    setModalOpen(true)
+  }
+
+  // Close modal
+  const closeModal = () => {
+    setModalOpen(false)
+    setSelectedApproval(null)
+  }
 
   // Fetch Approval Data from API
   useEffect(() => {
@@ -264,11 +265,11 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(internalData) ? internalData.length : 0,
                 items: Array.isArray(internalData)
-                  ? internalData.slice(0, 3).map((approval: any) => ({
+                  ? internalData.map((approval: any) => ({
                       name: `${approval.JobName} - ${approval.ClientName}`,
                       amount: approval.QuotedCost || '',
                       date: approval.CreatedDate || 'N/A',
-                      urgent: true,
+                      urgent: false,
                     }))
                   : [],
               }
@@ -277,7 +278,7 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(invoiceData) ? invoiceData.length : 0,
                 items: Array.isArray(invoiceData)
-                  ? invoiceData.slice(0, 3).map((invoice: any) => ({
+                  ? invoiceData.map((invoice: any) => ({
                       name: `${invoice.InvoiceNo || 'N/A'} - ${invoice.ClientName}`,
                       amount: `₹${invoice.NetAmount?.toLocaleString('en-IN') || '0'}`,
                       date: invoice.InvoiceDate || 'N/A',
@@ -290,7 +291,7 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(priceData) ? priceData.length : 0,
                 items: Array.isArray(priceData)
-                  ? priceData.slice(0, 3).map((price: any) => ({
+                  ? priceData.map((price: any) => ({
                       name: `${price.JobName || 'N/A'} - ${price.ClientName}`,
                       amount: `${price.OrderQuantity || 0} ${price.EstimationUnit || 'PCS'}`,
                       date: price.BookingNo || 'N/A',
@@ -303,7 +304,7 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(poData) ? poData.length : 0,
                 items: Array.isArray(poData)
-                  ? poData.slice(0, 3).map((po: any) => ({
+                  ? poData.map((po: any) => ({
                       name: `${po.VoucherNo || 'N/A'} - ${po.LedgerName}`,
                       amount: `₹${po.NetAmount?.toLocaleString('en-IN') || '0'}`,
                       date: po.VoucherDate || 'N/A',
@@ -316,11 +317,11 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(purchaseReqData) ? purchaseReqData.length : 0,
                 items: Array.isArray(purchaseReqData)
-                  ? purchaseReqData.slice(0, 3).map((req: any) => ({
+                  ? purchaseReqData.map((req: any) => ({
                       name: `${req.ItemName || 'N/A'} - ${req.VoucherNo}`,
                       amount: `${req.RequiredQuantity || 0} ${req.StockUnit || 'Units'}`,
                       date: req.VoucherDate || 'N/A',
-                      urgent: true,
+                      urgent: false,
                     }))
                   : [],
               }
@@ -329,11 +330,11 @@ export default function ApprovalsSection() {
                 ...item,
                 count: Array.isArray(paperReqData) ? paperReqData.length : 0,
                 items: Array.isArray(paperReqData)
-                  ? paperReqData.slice(0, 3).map((paper: any) => ({
+                  ? paperReqData.map((paper: any) => ({
                       name: `${paper.JobName || 'N/A'} - ${paper.ClientName}`,
                       amount: `₹${paper.TotalAmount?.toLocaleString('en-IN') || '0'}`,
                       date: paper.DeliveryDate || 'N/A',
-                      urgent: true,
+                      urgent: false,
                     }))
                   : [],
               }
@@ -365,9 +366,6 @@ export default function ApprovalsSection() {
           <Badge className="bg-orange-500 h-6 sm:h-7 px-2 sm:px-3 text-xs sm:text-sm font-bold">
             {loading ? '...' : totalPending} Total
           </Badge>
-          <Badge variant="destructive" className="h-6 sm:h-7 px-2 sm:px-3 text-xs sm:text-sm font-bold animate-pulse">
-            {approvalData.filter((a: ApprovalData) => a.priority === 'high').length} Urgent
-          </Badge>
         </div>
       </div>
 
@@ -375,49 +373,21 @@ export default function ApprovalsSection() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
         {approvalData.map((approval: ApprovalData) => {
           const Icon = approval.icon
-          const trendData = approval.trend.map((value: number, index: number) => ({ value, index }))
 
           return (
             <Card key={approval.id} className="border hover:shadow-lg transition-all group overflow-hidden focus:outline-none">
               <CardContent className="p-0">
-                {/* Compact Header with Trend */}
+                {/* Compact Header */}
                 <div className={`${approval.lightColor} p-2 sm:p-3 border-b`}>
                   <div className="flex items-start justify-between mb-1.5 sm:mb-2">
                     <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${approval.color} flex items-center justify-center`}>
                       <Icon className="text-white" size={16} />
                     </div>
-                    {approval.priority === 'high' && (
-                      <Badge variant="destructive" className="h-4 sm:h-5 px-1.5 sm:px-2 text-[8px] sm:text-[9px] animate-pulse">URGENT</Badge>
-                    )}
                   </div>
 
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className={`text-xl sm:text-2xl font-bold ${approval.textColor}`}>{approval.count}</div>
-                      <div className="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-wide">Pending</div>
-                    </div>
-
-                    {/* Mini Trend Chart */}
-                    <div className="h-8 w-12 sm:h-10 sm:w-16">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={trendData}>
-                          <defs>
-                            <linearGradient id={`gradient-${approval.id}`} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={approval.color.replace('bg-', '#')} stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor={approval.color.replace('bg-', '#')} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <Tooltip contentStyle={{ fontSize: '10px', padding: '2px 6px' }} />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke={approval.color.replace('bg-', '#')}
-                            strokeWidth={1.5}
-                            fill={`url(#gradient-${approval.id})`}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                  <div>
+                    <div className={`text-xl sm:text-2xl font-bold ${approval.textColor}`}>{approval.count}</div>
+                    <div className="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-wide">Pending</div>
                   </div>
                 </div>
 
@@ -431,39 +401,42 @@ export default function ApprovalsSection() {
 
                 {/* Compact Item List */}
                 <div className="p-1.5 sm:p-2 bg-white space-y-1">
-                  {approval.items.slice(0,3).map((item: ApprovalItem, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors group/item"
-                    >
-                      <div className="flex-1 min-w-0 mr-1.5 sm:mr-2">
-                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-900 truncate">{item.name}</p>
-                          {item.urgent && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
-                          )}
+                  <div className="space-y-1">
+                    {approval.items.slice(0, 3).map((item: ApprovalItem, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors group/item"
+                      >
+                        <div className="flex-1 min-w-0 mr-1.5 sm:mr-2">
+                          <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5">
+                            <p className="text-[11px] sm:text-xs font-medium text-gray-900 truncate">{item.name}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] text-gray-600">
+                            <span className="flex items-center gap-0.5 sm:gap-1">
+                              <FiClock size={9} />
+                              {item.date}
+                            </span>
+                            {item.amount && (
+                              <span className="font-semibold text-gray-900">{item.amount}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] text-gray-600">
-                          <span className="flex items-center gap-0.5 sm:gap-1">
-                            <FiClock size={9} />
-                            {item.date}
-                          </span>
-                          {item.amount && (
-                            <span className="font-semibold text-gray-900">{item.amount}</span>
-                          )}
-                        </div>
+                        <button className="opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
+                          <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${approval.color} flex items-center justify-center hover:scale-110 transition-transform`}>
+                            <FiArrowRight className="text-white" size={11} />
+                          </div>
+                        </button>
                       </div>
-                      <button className="opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
-                        <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${approval.color} flex items-center justify-center hover:scale-110 transition-transform`}>
-                          <FiArrowRight className="text-white" size={11} />
-                        </div>
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
 
                   {approval.items.length > 3 && (
-                    <button className="w-full mt-0.5 sm:mt-1 py-1 sm:py-1.5 text-[9px] sm:text-[10px] font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                      View All {approval.count} Items →
+                    <button
+                      onClick={() => openModal(approval)}
+                      className={`w-full mt-0.5 sm:mt-1 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold ${approval.textColor} bg-gradient-to-r ${approval.lightColor} border-2 border-transparent hover:border-current rounded-lg transition-all duration-300 shadow-sm hover:shadow-lg transform hover:scale-[1.02] flex items-center justify-center gap-1.5 group`}
+                    >
+                      <span>View All {approval.count} Items</span>
+                      <FiArrowRight className="group-hover:translate-x-1 transition-transform duration-300" size={12} />
                     </button>
                   )}
                 </div>
@@ -472,6 +445,95 @@ export default function ApprovalsSection() {
           )
         })}
       </div>
+
+      {/* Modal for View All Items */}
+      {modalOpen && selectedApproval && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" onClick={closeModal}>
+          <div 
+            className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`${selectedApproval.lightColor} px-4 sm:px-6 py-4 border-b flex items-center justify-between rounded-t-lg`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${selectedApproval.color} flex items-center justify-center`}>
+                  {React.createElement(selectedApproval.icon, { className: 'text-white', size: 20 })}
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">{selectedApproval.title}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                    {selectedApproval.count} pending {selectedApproval.count === 1 ? 'item' : 'items'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeModal}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <FiX size={20} className="text-gray-600" />
+              </button>
+            </div>
+
+            {/* Modal Body - Scrollable List */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 sm:space-y-3">
+                {selectedApproval.items.map((item: ApprovalItem, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                      {/* Left: Item Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-sm sm:text-base font-semibold text-gray-900">{item.name}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                          <span className="flex items-center gap-1.5">
+                            <FiClock size={14} />
+                            <span>{item.date}</span>
+                          </span>
+                          {item.amount && (
+                            <span className="font-semibold text-gray-900 px-2 py-1 bg-gray-100 rounded">
+                              {item.amount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Action Button */}
+                      <button className="flex-shrink-0 self-start sm:self-center">
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${selectedApproval.color} flex items-center justify-center hover:scale-110 transition-transform shadow-md`}>
+                          <FiArrowRight className="text-white" size={16} />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedApproval.items.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-sm">No items found</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-4 sm:px-6 py-4 border-t bg-gray-50 rounded-b-lg flex justify-between items-center">
+              <p className="text-xs sm:text-sm text-gray-600">
+                Showing <span className="font-semibold">{selectedApproval.items.length}</span> {selectedApproval.items.length === 1 ? 'item' : 'items'}
+              </p>
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

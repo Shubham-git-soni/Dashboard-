@@ -300,6 +300,10 @@ export default function DailyUpdateSection() {
   const [salesDeliveriesLoading, setSalesDeliveriesLoading] = useState(false)
   const [purchasePOsLoading, setPurchasePOsLoading] = useState(false)
   const [grnLoading, setGRNLoading] = useState(false)
+  
+  // Filtering states - show immediate feedback
+  const [purchasePOsFiltering, setPurchasePOsFiltering] = useState(false)
+  const [grnFiltering, setGRNFiltering] = useState(false)
 
   // Separate date range states for sections that need date filtering
   const [purchasePODates, setPurchasePODates] = useState({ from: '2025-04-01', to: '2025-11-11' })
@@ -313,15 +317,18 @@ export default function DailyUpdateSection() {
   const purchasePODebounceRef = useRef<NodeJS.Timeout>()
   const grnDebounceRef = useRef<NodeJS.Timeout>()
 
-  // Debounce Purchase PO dates
+  // Debounce Purchase PO dates - Reduced to 150ms for faster response
   useEffect(() => {
+    // Show filtering indicator immediately when date changes
+    setPurchasePOsFiltering(true)
+    
     if (purchasePODebounceRef.current) {
       clearTimeout(purchasePODebounceRef.current)
     }
 
     purchasePODebounceRef.current = setTimeout(() => {
       setDebouncedPurchasePODates(purchasePODates)
-    }, 500) // Wait 500ms after user stops typing
+    }, 150) // Reduced from 500ms to 150ms for faster filtering
 
     return () => {
       if (purchasePODebounceRef.current) {
@@ -330,15 +337,18 @@ export default function DailyUpdateSection() {
     }
   }, [purchasePODates.from, purchasePODates.to])
 
-  // Debounce GRN dates
+  // Debounce GRN dates - Reduced to 150ms for faster response
   useEffect(() => {
+    // Show filtering indicator immediately when date changes
+    setGRNFiltering(true)
+    
     if (grnDebounceRef.current) {
       clearTimeout(grnDebounceRef.current)
     }
 
     grnDebounceRef.current = setTimeout(() => {
       setDebouncedGRNDates(grnDates)
-    }, 500) // Wait 500ms after user stops typing
+    }, 150) // Reduced from 500ms to 150ms for faster filtering
 
     return () => {
       if (grnDebounceRef.current) {
@@ -386,7 +396,7 @@ export default function DailyUpdateSection() {
     ]
   }, [deliveriesData])
 
-  // Fetch Pending Sales Orders and Deliveries (No date filter required)
+  // Fetch Pending Sales Orders and Deliveries in PARALLEL (No date filter required)
   useEffect(() => {
     const fetchSalesAndDeliveries = async () => {
       try {
@@ -404,17 +414,11 @@ export default function DailyUpdateSection() {
           'FYEAR': '2025-2026',
         }
 
-        // Fetch Pending Sales Orders
-        const salesPOsResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingSalesOrders`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch Pending Deliveries
-        const deliveriesResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingDeliveries`,
-          { method: 'GET', headers }
-        )
+        // Fetch BOTH API calls in PARALLEL using Promise.all
+        const [salesPOsResponse, deliveriesResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingSalesOrders`, { method: 'GET', headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}DailyUpdate/PendingDeliveries`, { method: 'GET', headers })
+        ])
 
         let salesPOsApiData = []
         let deliveriesApiData = []
@@ -424,46 +428,28 @@ export default function DailyUpdateSection() {
           console.log('✅ Pending Sales Orders - Count:', Array.isArray(salesPOsApiData) ? salesPOsApiData.length : 0)
           console.log('📊 Pending Sales Orders - Data:', salesPOsApiData)
 
-          // Map API data to component format
+          // Map API data to component format - OPTIMIZED
           if (Array.isArray(salesPOsApiData) && salesPOsApiData.length > 0) {
+            const today = new Date()
+            today.setHours(0, 0, 0, 0) // Calculate once outside loop
+            const todayTime = today.getTime()
+            
             const mappedData = salesPOsApiData.map((item: any) => {
-              const today = new Date()
-              today.setHours(0, 0, 0, 0) // Reset time to start of day
-
-              // Use current date if DeliveryDate is null, otherwise use DeliveryDate
-              const comparisonDate = item.DeliveryDate
-                ? new Date(item.DeliveryDate)
-                : today // Current system date
-
-              comparisonDate.setHours(0, 0, 0, 0)
-
-              const expectedDate = item.ExpectedDeliveryDate
-                ? new Date(item.ExpectedDeliveryDate)
-                : null
-
-              if (expectedDate) {
-                expectedDate.setHours(0, 0, 0, 0)
-              }
-
-              // Calculate delay and status
               let delayDays = 0
               let calculatedStatus = 'on-time'
-              let displayDeliveryDate = item.DeliveryDate || 'Pending'
 
-              if (expectedDate) {
-                // Calculate difference in days
-                const diffTime = comparisonDate.getTime() - expectedDate.getTime()
-                const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              if (item.ExpectedDeliveryDate) {
+                const expectedDate = new Date(item.ExpectedDeliveryDate)
+                expectedDate.setHours(0, 0, 0, 0)
+                
+                const comparisonDate = item.DeliveryDate ? new Date(item.DeliveryDate) : today
+                comparisonDate.setHours(0, 0, 0, 0)
+                
+                const daysDiff = Math.ceil((comparisonDate.getTime() - expectedDate.getTime()) / 86400000) // 86400000 = 1000*60*60*24
 
-                // Status decide karo based on comparison
                 if (daysDiff > 0) {
-                  // Late hai (comparison date > expected date)
                   delayDays = daysDiff
                   calculatedStatus = 'delayed'
-                } else {
-                  // On-time hai (comparison date <= expected date)
-                  delayDays = 0
-                  calculatedStatus = 'on-time'
                 }
               }
 
@@ -472,7 +458,7 @@ export default function DailyUpdateSection() {
                 client: item.ClientName || 'N/A',
                 jobName: item.JobName || 'N/A',
                 value: `₹${item.NetAmount?.toLocaleString('en-IN') || '0'}`,
-                deliveryDate: displayDeliveryDate,
+                deliveryDate: item.DeliveryDate || 'Pending',
                 expectedDate: item.ExpectedDeliveryDate || 'N/A',
                 dueDate: item.ExpectedDeliveryDate || 'N/A',
                 delay: delayDays,
@@ -482,7 +468,7 @@ export default function DailyUpdateSection() {
             setSalesPOsData(mappedData)
           }
         } else {
-          console.error(' Pending Sales Orders Error:', salesPOsResponse.status, salesPOsResponse.statusText)
+          console.error('❌ Pending Sales Orders Error:', salesPOsResponse.status, salesPOsResponse.statusText)
         }
 
         if (deliveriesResponse.ok) {
@@ -490,16 +476,15 @@ export default function DailyUpdateSection() {
           console.log(' Pending Deliveries - Count:', Array.isArray(deliveriesApiData) ? deliveriesApiData.length : 0)
           console.log(' Pending Deliveries - Data:', deliveriesApiData)
 
-          // Map API data to component format
+          // Map API data to component format - OPTIMIZED
           if (Array.isArray(deliveriesApiData) && deliveriesApiData.length > 0) {
+            const todayTime = Date.now() // Cache current time
+            
             const mappedData = deliveriesApiData.map((item: any) => {
-              // Calculate delay days if DeliveryStatus is "Delay"
               let delayDays = 0
               if (item.DeliveryStatus === 'Delay' && item.ExpectedDeliveryDate) {
-                const expectedDate = new Date(item.ExpectedDeliveryDate)
-                const today = new Date()
-                const diffTime = today.getTime() - expectedDate.getTime()
-                delayDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
+                const expectedTime = new Date(item.ExpectedDeliveryDate).getTime()
+                delayDays = Math.max(0, Math.ceil((todayTime - expectedTime) / 86400000))
               }
 
               return {
@@ -516,7 +501,7 @@ export default function DailyUpdateSection() {
             setDeliveriesData(mappedData)
           }
         } else {
-          console.error(' Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
+          console.error('❌ Pending Deliveries Error:', deliveriesResponse.status, deliveriesResponse.statusText)
         }
       } catch (error) {
         console.error('Failed to fetch sales and deliveries:', error)
@@ -602,6 +587,7 @@ export default function DailyUpdateSection() {
         console.error('Failed to fetch Purchase POs:', error)
       } finally {
         setPurchasePOsLoading(false)
+        setPurchasePOsFiltering(false) // Hide filtering indicator
       }
     }
 
@@ -679,6 +665,7 @@ export default function DailyUpdateSection() {
         console.error('Failed to fetch Pending GRN:', error)
       } finally {
         setGRNLoading(false)
+        setGRNFiltering(false) // Hide filtering indicator
       }
     }
 
@@ -981,10 +968,10 @@ export default function DailyUpdateSection() {
                 <Badge className="bg-orange-600 text-white text-xs">
                   {purchasePOsData.length}
                 </Badge>
-                {purchasePOsLoading && (
+                {(purchasePOsLoading || purchasePOsFiltering) && (
                   <div className="flex items-center gap-1 text-xs text-orange-600">
                     <div className="animate-spin rounded-full h-3 w-3 border-2 border-orange-600 border-t-transparent"></div>
-                    <span>Loading...</span>
+                    <span>{purchasePOsFiltering ? 'Filtering...' : 'Loading...'}</span>
                   </div>
                 )}
               </div>
@@ -1051,10 +1038,10 @@ export default function DailyUpdateSection() {
                 <Badge className="bg-teal-600 text-white text-xs">
                   {pendingGRNData.length}
                 </Badge>
-                {grnLoading && (
+                {(grnLoading || grnFiltering) && (
                   <div className="flex items-center gap-1 text-xs text-teal-600">
                     <div className="animate-spin rounded-full h-3 w-3 border-2 border-teal-600 border-t-transparent"></div>
-                    <span>Loading...</span>
+                    <span>{grnFiltering ? 'Filtering...' : 'Loading...'}</span>
                   </div>
                 )}
               </div>

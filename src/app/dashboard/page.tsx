@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null); // store API data
   const [loading, setLoading] = useState(false);
   const [approvalsCount, setApprovalsCount] = useState(0);
+  const [totalPurchaseAmount, setTotalPurchaseAmount] = useState<string>('0');
 
 
   const username = process.env.NEXT_PUBLIC_API_USERNAME!;
@@ -64,7 +65,7 @@ export default function DashboardPage() {
           fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PaperRequirements`, { method: 'GET', headers })
         ])
 
-        let totalCount = 15 // Critical Stock Items (static)
+        let totalCount = 0
 
         if (internalRes.ok) {
           const data = await internalRes.json()
@@ -99,6 +100,48 @@ export default function DashboardPage() {
     }
 
     fetchApprovalsCount()
+  }, [token])
+
+  // Fetch Total Purchase Amount
+  useEffect(() => {
+    const fetchTotalPurchase = async () => {
+      try {
+        const headers = {
+          'Authorization': `Basic ${token}`,
+          'Content-Type': 'application/json',
+          'CompanyID': '2',
+          'UserID': '2',
+          'FYEAR': '2025-2026',
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}Purchases/TotalPurchaseAmount`,
+          { method: 'GET', headers }
+        )
+
+        if (response.ok) {
+          const apiData = await response.json()
+          console.log('✅ Dashboard - Total Purchase Data:', apiData)
+
+          if (Array.isArray(apiData) && apiData.length > 0) {
+            // Calculate total from all data
+            const totalAmount = apiData.reduce((sum, item) => sum + (parseFloat(item.TotalPurchaseAmount) || 0), 0)
+            const totalInLakhs = (totalAmount / 100000).toFixed(1)
+            setTotalPurchaseAmount(totalInLakhs)
+          } else {
+            setTotalPurchaseAmount('0')
+          }
+        } else {
+          console.error('❌ Dashboard - Total Purchase Error:', response.status, response.statusText)
+          setTotalPurchaseAmount('0')
+        }
+      } catch (error) {
+        console.error('Failed to fetch total purchase:', error)
+        setTotalPurchaseAmount('0')
+      }
+    }
+
+    fetchTotalPurchase()
   }, [token])
 
   const fetchData = async (mainHeader: string, subHeader: string) => {
@@ -136,11 +179,10 @@ export default function DashboardPage() {
       id: 'approvals',
       title: 'Approvals',
       value: approvalsCount.toString(),
-      subtitle: 'Pending actions',
-      change: '+8 today',
+      subtitle: `Total Pending`,
+      change: 'Requires attention',
       icon: FiCheckSquare,
       gradient: 'from-orange-500 to-red-500',
-      alert: 12,
       component: ApprovalsSection
     },
     {
@@ -151,7 +193,6 @@ export default function DashboardPage() {
       change: '5 delayed',
       icon: FiCalendar,
       gradient: 'from-blue-500 to-cyan-500',
-      alert: 5,
       component: DailyUpdateSection
     },
     {
@@ -162,7 +203,6 @@ export default function DashboardPage() {
       change: '85% efficiency',
       icon: FiActivity,
       gradient: 'from-purple-500 to-pink-500',
-      alert: 2,
       component: QCSection
     },
     {
@@ -173,18 +213,16 @@ export default function DashboardPage() {
       change: '+12.5% growth',
       icon: FiTrendingUp,
       gradient: 'from-green-500 to-emerald-500',
-      alert: 0,
       component: BusinessHealthSection
     },
     {
       id: 'purchases',
       title: 'Purchases',
-      value: '₹55.2L',
+      value: `₹${totalPurchaseAmount}L`,
       subtitle: 'Total spend',
       change: '68 POs raised',
       icon: FiShoppingCart,
       gradient: 'from-indigo-500 to-blue-600',
-      alert: 0,
       component: PurchasesSection
     }
   ]
@@ -231,13 +269,6 @@ export default function DashboardPage() {
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                         <Icon className="text-white" size={18} />
                       </div>
-                      {metric.alert > 0 && (
-                        <div className="relative">
-                          <Badge variant="destructive" className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 h-4 sm:h-5 animate-pulse">
-                            {metric.alert}
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                     <div className="text-white">
                       <div className="text-2xl sm:text-3xl font-bold mb-0.5 sm:mb-1">{metric.value}</div>
@@ -312,22 +343,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* <div>
-        <button onClick={()=>{
-          fetchData("Ledger","GetAllLedgers")
-        }}
-        >Fetch Ledger</button>
-
-        {loading && <p>Loading...</p>}
-
-        {data && (
-          <pre className="bg-gray-100 p-4 mt-4 rounded">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        )}
-      </div> */}
-
     </div>
 
 
