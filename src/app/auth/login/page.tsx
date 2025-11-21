@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { setSecureItem } from '@/lib/encryption'
 
@@ -9,7 +9,7 @@ import { setSecureItem } from '@/lib/encryption'
  * URL Format: /auth/login?userId=101&companyId=5&userName=Shubham
  * Data is encrypted before storing in localStorage
  */
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState('')
@@ -104,5 +104,21 @@ export default function LoginPage() {
         <p className="text-sm text-gray-500 mt-6">Please wait a moment</p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center bg-white p-10 rounded-xl shadow-2xl max-w-md">
+          <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Loading...</h2>
+          <p className="text-gray-600">Please wait</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
