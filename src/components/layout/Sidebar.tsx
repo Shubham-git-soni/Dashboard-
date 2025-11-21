@@ -121,9 +121,33 @@ export default function Sidebar({ className, isCollapsed, onToggle }: SidebarPro
               </li>
             </ul>
           </nav>
+{/* 
+          Bottom Section */}
+          <div className="border-t border-gray-200 p-2 space-y-2">
 
-          {/* Toggle Button */}
-          <div className="border-t border-gray-200 p-2">
+            {/* Go to ERP Button */}
+            {/* <button
+              onClick={() => {
+                // Open ERP in new tab
+                const erpUrl = 'http://localhost:8080/erp' // Replace with your ERP URL
+                window.open(erpUrl, '_blank')
+              }}
+              className={cn(
+                "flex items-center gap-2 w-full px-2.5 py-2 rounded-lg text-xs font-medium",
+                "bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 shadow-sm",
+                isCollapsed && "lg:justify-center"
+              )}
+            >
+              <FiExternalLink size={16} className="flex-shrink-0" />
+              <span className={cn(
+                "transition-all duration-300",
+                isCollapsed ? "lg:w-0 lg:opacity-0 lg:hidden" : "w-auto opacity-100"
+              )}>
+                Go to ERP
+              </span>
+            </button> */}
+
+            {/* Toggle Button */}
             <button
               onClick={onToggle}
               className={cn(

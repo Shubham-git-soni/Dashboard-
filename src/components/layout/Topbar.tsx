@@ -1,13 +1,30 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { FiSearch, FiBell, FiSettings, FiChevronDown, FiMaximize2 } from 'react-icons/fi'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import { getSecureItem } from '@/lib/encryption'
 
 export default function Topbar() {
   const today = new Date()
+
+  // User info from encrypted localStorage
+  const [userName, setUserName] = useState('User')
+  const [userId, setUserId] = useState('')
+  const [companyId, setCompanyId] = useState('')
+
+  useEffect(() => {
+    // Load user info from encrypted localStorage
+    const storedName = getSecureItem('userName')
+    const storedUserId = getSecureItem('userId')
+    const storedCompanyId = getSecureItem('companyId')
+
+    if (storedName) setUserName(storedName)
+    if (storedUserId) setUserId(storedUserId)
+    if (storedCompanyId) setCompanyId(storedCompanyId)
+  }, [])
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
@@ -66,13 +83,15 @@ export default function Topbar() {
           <button className="flex items-center gap-1.5 sm:gap-2 px-1 sm:px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors group">
             <div className="relative">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-[10px] sm:text-xs font-bold shadow-sm">
-                AD
+                {userName.charAt(0).toUpperCase()}
               </div>
               <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></span>
             </div>
             <div className="hidden lg:block text-left">
-              <p className="text-xs font-semibold text-gray-900 leading-tight">Admin User</p>
-              <p className="text-[10px] text-gray-500">Administrator</p>
+              <p className="text-xs font-semibold text-gray-900 leading-tight">{userName}</p>
+              <p className="text-[10px] text-gray-500">
+                {userId && companyId ? `User: ${userId} | Company: ${companyId}` : 'Loading...'}
+              </p>
             </div>
             <FiChevronDown size={14} className="hidden lg:block text-gray-400 group-hover:text-gray-600" />
           </button>

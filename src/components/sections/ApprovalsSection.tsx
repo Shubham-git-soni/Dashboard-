@@ -15,6 +15,7 @@ import {
   FiX
 } from 'react-icons/fi'
 import { IconType } from 'react-icons'
+import { apiCallWithDates } from '@/lib/api'
 
 interface ApprovalItem {
   name: string
@@ -137,10 +138,6 @@ export default function ApprovalsSection() {
       try {
         setLoading(true)
 
-        const username = process.env.NEXT_PUBLIC_API_USERNAME!
-        const password = process.env.NEXT_PUBLIC_API_PASSWORD!
-        const token = btoa(`${username}:${password}`)
-
         // Calculate date range (last 30 days)
         const toDate = new Date()
         const fromDate = new Date()
@@ -151,53 +148,8 @@ export default function ApprovalsSection() {
 
         console.log('📅 Date Range:', { fromDateStr, toDateStr })
 
-        const headers = {
-          'Authorization': `Basic ${token}`,
-          'Content-Type': 'application/json',
-          'CompanyID': '2',
-          'UserID': '2',
-          'FYEAR': '2025-2026',
-          'FromDate': fromDateStr, // YYYY-MM-DD format
-          'ToDate': toDateStr, // YYYY-MM-DD format
-        }
-
-        console.log('📤 Request Headers:', headers)
-
-        // Fetch Internal Approvals
-        const internalResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/InternalApprovals`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch Invoice Approvals
-        const invoiceResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/InvoiceApprovals`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch Price Approvals
-        const priceResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PriceApprovals`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch PO Approvals
-        const poResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/POApprovals`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch Purchase Requisitions
-        const purchaseReqResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PurchaseRequisitions`,
-          { method: 'GET', headers }
-        )
-
-        // Fetch Paper Requirements
-        const paperReqResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/PaperRequirements`,
-          { method: 'GET', headers }
-        )
+        // ✅ NEW: Using centralized API utility
+        // All API calls now automatically include userId and companyId from localStorage
 
         let internalData = []
         let invoiceData = []
@@ -206,55 +158,52 @@ export default function ApprovalsSection() {
         let purchaseReqData = []
         let paperReqData = []
 
-        if (internalResponse.ok) {
-          internalData = await internalResponse.json()
+        // Fetch Internal Approvals
+        try {
+          internalData = await apiCallWithDates('Approvals/InternalApprovals', fromDateStr, toDateStr)
           console.log('✅ Internal Approvals - Count:', Array.isArray(internalData) ? internalData.length : 0)
-          console.log('📊 Internal Approvals - Data:', internalData)
-        } else {
-          console.error('❌ Internal Approvals Error:', internalResponse.status, internalResponse.statusText)
+        } catch (error) {
+          console.error('❌ Internal Approvals Error:', error)
         }
 
-        if (invoiceResponse.ok) {
-          invoiceData = await invoiceResponse.json()
+        // Fetch Invoice Approvals
+        try {
+          invoiceData = await apiCallWithDates('Approvals/InvoiceApprovals', fromDateStr, toDateStr)
           console.log('✅ Invoice Approvals - Count:', Array.isArray(invoiceData) ? invoiceData.length : 0)
-          console.log('📊 Invoice Approvals - Data:', invoiceData)
-        } else {
-          console.error('❌ Invoice Approvals Error:', invoiceResponse.status, invoiceResponse.statusText)
+        } catch (error) {
+          console.error('❌ Invoice Approvals Error:', error)
         }
 
-        if (priceResponse.ok) {
-          priceData = await priceResponse.json()
+        // Fetch Price Approvals
+        try {
+          priceData = await apiCallWithDates('Approvals/PriceApprovals', fromDateStr, toDateStr)
           console.log('✅ Price Approvals - Count:', Array.isArray(priceData) ? priceData.length : 0)
-          console.log('📊 Price Approvals - Data:', priceData)
-        } else {
-          console.error('❌ Price Approvals Error:', priceResponse.status, priceResponse.statusText)
+        } catch (error) {
+          console.error('❌ Price Approvals Error:', error)
         }
 
-        if (poResponse.ok) {
-          poData = await poResponse.json()
+        // Fetch PO Approvals
+        try {
+          poData = await apiCallWithDates('Approvals/POApprovals', fromDateStr, toDateStr)
           console.log('✅ PO Approvals - Count:', Array.isArray(poData) ? poData.length : 0)
-          console.log('📊 PO Approvals - Data:', poData)
-        } else {
-          const errorText = await poResponse.text()
-          console.error('❌ PO Approvals Error - Status:', poResponse.status)
-          console.error('❌ PO Approvals Error - Response:', errorText)
-          console.error('❌ PO Approvals Error - URL:', `${process.env.NEXT_PUBLIC_API_BASE_URL}Approvals/POApprovals`)
+        } catch (error) {
+          console.error('❌ PO Approvals Error:', error)
         }
 
-        if (purchaseReqResponse.ok) {
-          purchaseReqData = await purchaseReqResponse.json()
+        // Fetch Purchase Requisitions
+        try {
+          purchaseReqData = await apiCallWithDates('Approvals/PurchaseRequisitions', fromDateStr, toDateStr)
           console.log('✅ Purchase Requisitions - Count:', Array.isArray(purchaseReqData) ? purchaseReqData.length : 0)
-          console.log('📊 Purchase Requisitions - Data:', purchaseReqData)
-        } else {
-          console.error('❌ Purchase Requisitions Error:', purchaseReqResponse.status, purchaseReqResponse.statusText)
+        } catch (error) {
+          console.error('❌ Purchase Requisitions Error:', error)
         }
 
-        if (paperReqResponse.ok) {
-          paperReqData = await paperReqResponse.json()
+        // Fetch Paper Requirements
+        try {
+          paperReqData = await apiCallWithDates('Approvals/PaperRequirements', fromDateStr, toDateStr)
           console.log('✅ Paper Requirements - Count:', Array.isArray(paperReqData) ? paperReqData.length : 0)
-          console.log('📊 Paper Requirements - Data:', paperReqData)
-        } else {
-          console.error('❌ Paper Requirements Error:', paperReqResponse.status, paperReqResponse.statusText)
+        } catch (error) {
+          console.error('❌ Paper Requirements Error:', error)
         }
 
         // Update approval data
