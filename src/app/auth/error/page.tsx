@@ -54,7 +54,7 @@ export default function AuthErrorPage() {
             Please login from your ERP application
           </p>
           <p className="text-xs text-blue-600">
-            Use the "Dashboard" button in your ERP to access this application
+            Use the &ldquo;Dashboard&rdquo; button in your ERP to access this application
           </p>
         </div>
 

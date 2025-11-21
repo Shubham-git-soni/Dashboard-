@@ -321,7 +321,7 @@ export default function DailyUpdateSection() {
   useEffect(() => {
     // Show filtering indicator immediately when date changes
     setPurchasePOsFiltering(true)
-    
+
     if (purchasePODebounceRef.current) {
       clearTimeout(purchasePODebounceRef.current)
     }
@@ -335,13 +335,13 @@ export default function DailyUpdateSection() {
         clearTimeout(purchasePODebounceRef.current)
       }
     }
-  }, [purchasePODates.from, purchasePODates.to])
+  }, [purchasePODates])
 
   // Debounce GRN dates - Reduced to 150ms for faster response
   useEffect(() => {
     // Show filtering indicator immediately when date changes
     setGRNFiltering(true)
-    
+
     if (grnDebounceRef.current) {
       clearTimeout(grnDebounceRef.current)
     }
@@ -355,7 +355,7 @@ export default function DailyUpdateSection() {
         clearTimeout(grnDebounceRef.current)
       }
     }
-  }, [grnDates.from, grnDates.to])
+  }, [grnDates])
 
   // Calculate chart data dynamically
   const salesPOChartData = useMemo(() => {
@@ -592,7 +592,7 @@ export default function DailyUpdateSection() {
     }
 
     fetchPurchasePOs()
-  }, [debouncedPurchasePODates.from, debouncedPurchasePODates.to])
+  }, [debouncedPurchasePODates])
 
   // Fetch Pending GRN (with date filter)
   useEffect(() => {
@@ -670,7 +670,7 @@ export default function DailyUpdateSection() {
     }
 
     fetchPendingGRN()
-  }, [debouncedGRNDates.from, debouncedGRNDates.to])
+  }, [debouncedGRNDates])
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6">
