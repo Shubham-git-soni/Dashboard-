@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { setSecureItem } from '@/lib/encryption'
+import { setAuthSession } from '@/lib/auth'
 
 /**
  * Login Page - Receives userId and companyId from ERP
@@ -31,15 +32,19 @@ function LoginContent() {
       return
     }
 
-    // Step 3: Encrypt and save to localStorage
+    // Step 3: Encrypt and save to localStorage + Set Auth Cookies
     try {
-      // ✅ NEW: Using encrypted storage
+      // ✅ Save encrypted data to localStorage (for API calls)
       setSecureItem('userId', userId)
       setSecureItem('companyId', companyId)
       setSecureItem('userName', userName)
 
+      // ✅ Set authentication cookies (for middleware protection)
+      setAuthSession(userId, companyId, userName)
+
       console.log('✅ User data encrypted and saved to localStorage')
       console.log('🔐 Encrypted values stored securely')
+      console.log('🍪 Authentication cookies set for route protection')
 
       // Step 4: Redirect to dashboard after short delay
       setTimeout(() => {
